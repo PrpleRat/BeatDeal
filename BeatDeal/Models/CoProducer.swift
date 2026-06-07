@@ -55,11 +55,11 @@ struct DeliveryChecklist: Codable, Equatable {
     ]
 
     var completedCount: Int {
-        items.filter { self[keyPath: $0.keyPath] }.count
+        Self.items.filter { self[keyPath: $0.keyPath] }.count
     }
 
     var isComplete: Bool {
-        completedCount == items.count
+        completedCount == Self.items.count
     }
 }
 
