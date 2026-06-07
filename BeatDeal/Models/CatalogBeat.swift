@@ -62,6 +62,7 @@ struct CatalogBeat: Codable, Identifiable, Equatable {
     var genre: BeatGenre
     var prices: CatalogBeatPrices
     var createdAt: Date
+    var coProducer: CoProducer?
 
     var tonaliteLabel: String? {
         guard let musicalKey, let keyMode else { return nil }

@@ -7,6 +7,8 @@ struct ProducerProfile: Codable, Equatable {
     var siret: String = ""
     var country: String = "France"
     var currency: Currency = .eur
+    var paymentLinkURL: String = ""
+    var dmCallToAction: String = "Dispo pour t'envoyer le contrat dès paiement reçu 🔥"
 }
 
 struct Contract: Codable, Identifiable, Equatable {
@@ -34,6 +36,13 @@ struct Contract: Codable, Identifiable, Equatable {
     var streamsReported: Int?
     var expiresAt: Date?
     var catalogBeatId: String?
+    var catalogPackId: String?
+    var packTitle: String?
+    var packBeatItems: [LicensedBeatItem]?
+    var coProducerName: String?
+    var coProducerAlias: String?
+    var coProducerSharePercent: Int?
+    var deliveryChecklist: DeliveryChecklist?
 
     var reference: String { "BEAT-\(id.prefix(8).uppercased())" }
 
@@ -66,6 +75,11 @@ struct ContractDraft: Equatable {
     var maxStreams: Int = LicenseType.mp3Lease.defaultMaxStreams
     var additionalClauses: String = ""
     var catalogBeatId: String?
+    var catalogPackId: String?
+    var packTitle: String?
+    var packBeatItems: [LicensedBeatItem]?
+    var coProducer: CoProducer = CoProducer()
+    var enableCoProducer: Bool = false
 
     mutating func applyProfile(_ profile: ProducerProfile) {
         producerName = profile.producerName
@@ -86,6 +100,9 @@ struct ContractDraft: Equatable {
 
     mutating func applyCatalogBeat(_ beat: CatalogBeat, licenseType: LicenseType?) {
         catalogBeatId = beat.id
+        catalogPackId = nil
+        packTitle = nil
+        packBeatItems = nil
         beatTitle = beat.title
         if let bpm = beat.bpm { self.bpm = String(bpm) }
         if let key = beat.musicalKey, let mode = beat.keyMode {
@@ -94,6 +111,24 @@ struct ContractDraft: Equatable {
         }
         if let licenseType {
             price = String(beat.prices.price(for: licenseType))
+        }
+        if let co = beat.coProducer, co.isValid {
+            enableCoProducer = true
+            coProducer = co
+        }
+    }
+
+    mutating func applyCatalogPack(_ pack: BeatPack, beats: [CatalogBeat], licenseType: LicenseType?) {
+        catalogPackId = pack.id
+        catalogBeatId = nil
+        packTitle = pack.title
+        beatTitle = pack.title
+        packBeatItems = beats.map { LicensedBeatItem.from($0) }
+        bpm = ""
+        selectedKey = nil
+        selectedMode = nil
+        if let licenseType {
+            price = String(pack.prices.price(for: licenseType))
         }
     }
 
@@ -125,19 +160,34 @@ struct ContractDraft: Equatable {
             pdfFileName: nil,
             streamsReported: 0,
             expiresAt: Contract.defaultExpiresAt(from: Date(), licenseType: licenseType),
-            catalogBeatId: catalogBeatId
+            catalogBeatId: catalogBeatId,
+            catalogPackId: catalogPackId,
+            packTitle: packTitle,
+            packBeatItems: packBeatItems,
+            coProducerName: enableCoProducer ? coProducer.name.trimmingCharacters(in: .whitespaces) : nil,
+            coProducerAlias: enableCoProducer ? coProducer.alias.trimmingCharacters(in: .whitespaces) : nil,
+            coProducerSharePercent: enableCoProducer ? coProducer.sharePercent : nil,
+            deliveryChecklist: DeliveryChecklist()
         )
     }
 
     var canProceedStep1: Bool { licenseType != nil }
 
     var canProceedStep2: Bool {
-        !artistName.trimmingCharacters(in: .whitespaces).isEmpty
+        let hasBeatInfo = !beatTitle.trimmingCharacters(in: .whitespaces).isEmpty
+            || !(packBeatItems?.isEmpty ?? true)
+        return !artistName.trimmingCharacters(in: .whitespaces).isEmpty
             && !artistEmail.trimmingCharacters(in: .whitespaces).isEmpty
             && artistEmail.contains("@")
-            && !beatTitle.trimmingCharacters(in: .whitespaces).isEmpty
+            && hasBeatInfo
             && !producerName.trimmingCharacters(in: .whitespaces).isEmpty
             && !producerEmail.trimmingCharacters(in: .whitespaces).isEmpty
             && Int(price.trimmingCharacters(in: .whitespaces)) != nil
+            && coProducerIsValid
+    }
+
+    private var coProducerIsValid: Bool {
+        if !enableCoProducer { return true }
+        return coProducer.isValid
     }
 }

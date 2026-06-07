@@ -52,20 +52,6 @@ enum ContractHTMLBuilder {
             streamsLabel = "\(contract.maxStreams.formatted()) streams maximum"
         }
 
-        let bpmLine: String
-        if let bpm = contract.bpm {
-            bpmLine = "BPM : \(bpm)"
-        } else {
-            bpmLine = "BPM : —"
-        }
-
-        let keyLine: String
-        if let tonalite = contract.tonaliteLabel {
-            keyLine = "Tonalité : \(escape(tonalite))"
-        } else {
-            keyLine = "Tonalité : —"
-        }
-
         let paymentRef = contract.paymentReference.isEmpty ? "—" : escape(contract.paymentReference)
         let clauses = contract.additionalClauses.isEmpty ? "Aucune" : escape(contract.additionalClauses)
 
@@ -100,6 +86,9 @@ enum ContractHTMLBuilder {
             }
             p, li { margin: 4px 0; }
             ul { padding-left: 18px; }
+            table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 10pt; }
+            th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+            th { background: #f5f5f5; }
             .granted { color: #111; }
             .denied { color: #888; }
             .footer {
@@ -108,12 +97,8 @@ enum ContractHTMLBuilder {
               color: #666;
               text-align: center;
             }
-            .signatures {
-              margin-top: 24px;
-            }
-            .sign-line {
-              margin: 18px 0;
-            }
+            .signatures { margin-top: 24px; }
+            .sign-line { margin: 18px 0; }
           </style>
         </head>
         <body>
@@ -121,11 +106,7 @@ enum ContractHTMLBuilder {
           <hr>
 
           <h2>Parties</h2>
-          <p><strong>Producteur (Concédant) :</strong><br>
-          Nom : \(escape(contract.producerName))<br>
-          Alias : \(escape(contract.producerAlias))<br>
-          Email : \(escape(contract.producerEmail))<br>
-          Pays : \(escape(contract.producerCountry))</p>
+          \(producersHTML(for: contract))
 
           <p><strong>Artiste (Licencié) :</strong><br>
           Nom : \(escape(contract.artistName))<br>
@@ -134,13 +115,7 @@ enum ContractHTMLBuilder {
           <hr>
 
           <h2>Objet du contrat</h2>
-          <p>
-            Beat licencié : "\(escape(contract.beatTitle))"<br>
-            \(escape(bpmLine)) | \(keyLine)<br>
-            Type de licence : \(escape(contract.licenseType.title))<br>
-            Date du contrat : \(escape(dateStr))<br>
-            Référence : \(escape(contract.reference))
-          </p>
+          \(beatsObjectHTML(for: contract, dateStr: dateStr))
 
           <hr>
 
@@ -170,9 +145,10 @@ enum ContractHTMLBuilder {
 
           <h2>Crédits obligatoires</h2>
           <p>
-            L'Artiste s'engage à créditer le Producteur comme suit sur toutes les publications :<br>
-            "<strong>\(escape(contract.producerAlias))</strong>"
+            L'Artiste s'engage à créditer le(s) Producteur(s) comme suit sur toutes les publications :<br>
+            "<strong>\(escape(contract.creditLine))</strong>"
           </p>
+          \(splitSheetNote(for: contract))
 
           <hr>
 
@@ -183,8 +159,7 @@ enum ContractHTMLBuilder {
 
           <h2>Signatures</h2>
           <div class="signatures">
-            <p class="sign-line">Producteur : _______________________ &nbsp;&nbsp; Date : __________</p>
-            <p class="sign-line">Artiste : &nbsp;&nbsp;_______________________ &nbsp;&nbsp; Date : __________</p>
+            \(signaturesHTML(for: contract))
           </div>
 
           <hr>
@@ -194,6 +169,103 @@ enum ContractHTMLBuilder {
           </p>
         </body>
         </html>
+        """
+    }
+
+    private static func producersHTML(for contract: Contract) -> String {
+        if contract.hasCoProducer {
+            let coShare = contract.coProducerSharePercent ?? 50
+            let mainShare = 100 - coShare
+            let coName = contract.coProducerName ?? ""
+            let coAlias = contract.coProducerAlias?.isEmpty == false ? contract.coProducerAlias! : coName
+            return """
+            <p><strong>Producteur principal (Concédant) — \(mainShare) % :</strong><br>
+            Nom : \(escape(contract.producerName))<br>
+            Alias : \(escape(contract.producerAlias))<br>
+            Email : \(escape(contract.producerEmail))<br>
+            Pays : \(escape(contract.producerCountry))</p>
+
+            <p><strong>Co-producteur (Concédant) — \(coShare) % :</strong><br>
+            Nom : \(escape(coName))<br>
+            Alias : \(escape(coAlias))</p>
+            """
+        }
+
+        return """
+        <p><strong>Producteur (Concédant) :</strong><br>
+        Nom : \(escape(contract.producerName))<br>
+        Alias : \(escape(contract.producerAlias))<br>
+        Email : \(escape(contract.producerEmail))<br>
+        Pays : \(escape(contract.producerCountry))</p>
+        """
+    }
+
+    private static func beatsObjectHTML(for contract: Contract, dateStr: String) -> String {
+        if let items = contract.packBeatItems, items.count > 1 {
+            let rows = items.map { item -> String in
+                let bpm = item.bpm.map { "\($0)" } ?? "—"
+                let key = item.tonaliteLabel.map(escape) ?? "—"
+                return "<tr><td>\(escape(item.title))</td><td>\(bpm)</td><td>\(key)</td></tr>"
+            }.joined()
+            return """
+            <p>
+              Pack licencié : "<strong>\(escape(contract.displayBeatTitle))</strong>"<br>
+              Type de licence : \(escape(contract.licenseType.title))<br>
+              Date du contrat : \(escape(dateStr))<br>
+              Référence : \(escape(contract.reference))
+            </p>
+            <table>
+              <thead><tr><th>Beat</th><th>BPM</th><th>Tonalité</th></tr></thead>
+              <tbody>\(rows)</tbody>
+            </table>
+            <p><em>Chaque beat du pack bénéficie des mêmes droits et limites définis ci-dessous.</em></p>
+            """
+        }
+
+        let bpmLine: String
+        if let bpm = contract.bpm {
+            bpmLine = "BPM : \(bpm)"
+        } else {
+            bpmLine = "BPM : —"
+        }
+
+        let keyLine: String
+        if let tonalite = contract.tonaliteLabel {
+            keyLine = "Tonalité : \(escape(tonalite))"
+        } else {
+            keyLine = "Tonalité : —"
+        }
+
+        return """
+        <p>
+          Beat licencié : "\(escape(contract.beatTitle))"<br>
+          \(escape(bpmLine)) | \(keyLine)<br>
+          Type de licence : \(escape(contract.licenseType.title))<br>
+          Date du contrat : \(escape(dateStr))<br>
+          Référence : \(escape(contract.reference))
+        </p>
+        """
+    }
+
+    private static func splitSheetNote(for contract: Contract) -> String {
+        guard contract.hasCoProducer else { return "" }
+        return """
+        <p><em>Répartition des royalties conforme au split sheet convenu entre les producteurs (\(escape(contract.creditLine))).</em></p>
+        """
+    }
+
+    private static func signaturesHTML(for contract: Contract) -> String {
+        if contract.hasCoProducer {
+            let coName = contract.coProducerName ?? "Co-producteur"
+            return """
+            <p class="sign-line">Producteur principal : _______________________ &nbsp;&nbsp; Date : __________</p>
+            <p class="sign-line">Co-producteur (\(escape(coName))) : _______________________ &nbsp;&nbsp; Date : __________</p>
+            <p class="sign-line">Artiste : &nbsp;&nbsp;_______________________ &nbsp;&nbsp; Date : __________</p>
+            """
+        }
+        return """
+        <p class="sign-line">Producteur : _______________________ &nbsp;&nbsp; Date : __________</p>
+        <p class="sign-line">Artiste : &nbsp;&nbsp;_______________________ &nbsp;&nbsp; Date : __________</p>
         """
     }
 

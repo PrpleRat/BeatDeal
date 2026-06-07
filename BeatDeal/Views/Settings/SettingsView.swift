@@ -18,6 +18,14 @@ struct SettingsView: View {
                     TextField("Pays", text: $profileStorage.profile.country)
                 }
 
+                Section("DM Kit — vente") {
+                    TextField("Lien de paiement (PayPal.me, Lydia…)", text: $profileStorage.profile.paymentLinkURL)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                    TextField("Call to action", text: $profileStorage.profile.dmCallToAction, axis: .vertical)
+                        .lineLimit(2...4)
+                }
+
                 Section("Devise") {
                     Picker("Devise", selection: $profileStorage.profile.currency) {
                         ForEach(Currency.allCases) { currency in

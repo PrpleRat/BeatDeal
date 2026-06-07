@@ -14,6 +14,7 @@ enum AppConstants {
     static let storageKeyIsPro = "beatdeal.is_pro"
     static let storageKeyGeneratedCount = "beatdeal.generated_count"
     static let storageKeyCatalog = "beatdeal.catalog"
+    static let storageKeyPacks = "beatdeal.packs"
 
     static let streamAlertThreshold = 0.8
     static let licenseExpiryWarningDays = 14

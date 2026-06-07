@@ -110,61 +110,98 @@ struct NewContractView: View {
 
             FormSectionHeader(title: "Infos beat")
 
-            if !catalogStorage.beats.isEmpty {
+            if !catalogStorage.beats.isEmpty || !catalogStorage.packs.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Depuis le catalogue")
                         .font(BeatDealTypography.caption)
                         .foregroundStyle(BeatDealColors.textSecondary)
-                    Picker("Beat du catalogue", selection: $draft.catalogBeatId) {
-                        Text("Saisie manuelle").tag(Optional<String>.none)
-                        ForEach(catalogStorage.beats) { beat in
-                            Text(beat.title).tag(Optional(beat.id))
+
+                    if !catalogStorage.packs.isEmpty {
+                        Picker("Pack", selection: $draft.catalogPackId) {
+                            Text("Aucun pack").tag(Optional<String>.none)
+                            ForEach(catalogStorage.packs) { pack in
+                                Text(pack.title).tag(Optional(pack.id))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(BeatDealColors.accentLight)
+                        .onChange(of: draft.catalogPackId) { _, newId in
+                            if let pack = catalogStorage.pack(id: newId) {
+                                let beats = catalogStorage.beats(for: pack)
+                                draft.applyCatalogPack(pack, beats: beats, licenseType: draft.licenseType)
+                            }
                         }
                     }
-                    .pickerStyle(.menu)
-                    .tint(BeatDealColors.accentLight)
-                    .onChange(of: draft.catalogBeatId) { _, newId in
-                        if let beat = catalogStorage.beat(id: newId) {
-                            draft.applyCatalogBeat(beat, licenseType: draft.licenseType)
+
+                    if !catalogStorage.beats.isEmpty {
+                        Picker("Beat", selection: $draft.catalogBeatId) {
+                            Text("Saisie manuelle").tag(Optional<String>.none)
+                            ForEach(catalogStorage.beats) { beat in
+                                Text(beat.title).tag(Optional(beat.id))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(BeatDealColors.accentLight)
+                        .disabled(draft.catalogPackId != nil)
+                        .onChange(of: draft.catalogBeatId) { _, newId in
+                            if let beat = catalogStorage.beat(id: newId) {
+                                draft.applyCatalogBeat(beat, licenseType: draft.licenseType)
+                            }
                         }
                     }
                 }
             }
 
-            BeatDealTextField(title: "Titre du beat", text: $draft.beatTitle, required: true)
-            BeatDealTextField(title: "BPM", text: $draft.bpm, keyboard: .numberPad)
+            if draft.catalogPackId == nil {
+                BeatDealTextField(title: "Titre du beat", text: $draft.beatTitle, required: true)
+                BeatDealTextField(title: "BPM", text: $draft.bpm, keyboard: .numberPad)
 
-            HStack(spacing: BeatDealSpacing.sm) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Tonalité")
-                        .font(BeatDealTypography.caption)
-                        .foregroundStyle(BeatDealColors.textSecondary)
-                    Picker("Tonalité", selection: $draft.selectedKey) {
-                        Text("—").tag(Optional<MusicalKey>.none)
-                        ForEach(MusicalKey.allCases) { key in
-                            Text(key.label).tag(Optional(key))
+                HStack(spacing: BeatDealSpacing.sm) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Tonalité")
+                            .font(BeatDealTypography.caption)
+                            .foregroundStyle(BeatDealColors.textSecondary)
+                        Picker("Tonalité", selection: $draft.selectedKey) {
+                            Text("—").tag(Optional<MusicalKey>.none)
+                            ForEach(MusicalKey.allCases) { key in
+                                Text(key.label).tag(Optional(key))
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .tint(BeatDealColors.accentLight)
                     }
-                    .pickerStyle(.menu)
-                    .tint(BeatDealColors.accentLight)
-                }
-                .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Mode")
-                        .font(BeatDealTypography.caption)
-                        .foregroundStyle(BeatDealColors.textSecondary)
-                    Picker("Mode", selection: $draft.selectedMode) {
-                        Text("—").tag(Optional<KeyMode>.none)
-                        ForEach(KeyMode.allCases) { mode in
-                            Text(mode.rawValue).tag(Optional(mode))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Mode")
+                            .font(BeatDealTypography.caption)
+                            .foregroundStyle(BeatDealColors.textSecondary)
+                        Picker("Mode", selection: $draft.selectedMode) {
+                            Text("—").tag(Optional<KeyMode>.none)
+                            ForEach(KeyMode.allCases) { mode in
+                                Text(mode.rawValue).tag(Optional(mode))
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .tint(BeatDealColors.accentLight)
                     }
-                    .pickerStyle(.menu)
-                    .tint(BeatDealColors.accentLight)
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+            } else if let items = draft.packBeatItems {
+                VStack(alignment: .leading, spacing: BeatDealSpacing.xs) {
+                    Text(draft.packTitle ?? draft.beatTitle)
+                        .font(BeatDealTypography.headline)
+                        .foregroundStyle(BeatDealColors.text)
+                    ForEach(items) { item in
+                        Text("• \(item.title)")
+                            .font(BeatDealTypography.caption)
+                            .foregroundStyle(BeatDealColors.textSecondary)
+                    }
+                }
+                .beatDealCard()
             }
+
+            CoProducerEditorView(enabled: $draft.enableCoProducer, coProducer: $draft.coProducer)
 
             FormSectionHeader(title: "Infos producteur")
             BeatDealTextField(title: "Nom de producteur", text: $draft.producerName, required: true)
