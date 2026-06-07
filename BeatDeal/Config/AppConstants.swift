@@ -13,8 +13,13 @@ enum AppConstants {
     static let storageKeyTemplates = "beatdeal.templates"
     static let storageKeyIsPro = "beatdeal.is_pro"
     static let storageKeyGeneratedCount = "beatdeal.generated_count"
+    static let storageKeyCatalog = "beatdeal.catalog"
 
-    static let revenueCatAPIKeyPlaceholder = "REVENUECAT_API_KEY_HERE"
+    static let streamAlertThreshold = 0.8
+    static let licenseExpiryWarningDays = 14
+    static let defaultLeaseDurationMonths = 12
+
+    static let notificationCategoryUpgrade = "LICENSE_UPGRADE"
 }
 
 enum Currency: String, Codable, CaseIterable, Identifiable {

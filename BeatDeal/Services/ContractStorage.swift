@@ -30,6 +30,9 @@ final class ContractStorage: ObservableObject {
             contracts.insert(contract, at: 0)
         }
         persist()
+        Task {
+            await LicenseAlertService.shared.refreshAlerts(for: contracts)
+        }
     }
 
     func delete(_ contract: Contract) {

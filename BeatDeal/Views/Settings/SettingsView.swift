@@ -26,6 +26,18 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Outils") {
+                    NavigationLink {
+                        TemplatesView()
+                    } label: {
+                        Label("Mes modèles", systemImage: "doc.on.doc.fill")
+                    }
+
+                    Button("Activer les alertes de licence") {
+                        Task { await LicenseAlertService.shared.requestAuthorizationIfNeeded() }
+                    }
+                }
+
                 Section("À propos") {
                     LabeledContent("Version", value: Bundle.main.appVersion)
 

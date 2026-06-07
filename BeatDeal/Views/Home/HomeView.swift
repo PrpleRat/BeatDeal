@@ -21,6 +21,8 @@ struct HomeView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
+                    revenueSummary
+
                     recentSection
                 }
                 .padding(BeatDealSpacing.md)
@@ -53,6 +55,32 @@ struct HomeView: View {
                 .foregroundStyle(BeatDealColors.textSecondary)
         }
         .padding(.top, BeatDealSpacing.sm)
+    }
+
+    private var revenueSummary: some View {
+        let month = RevenueStatsEngine.stats(for: storage.contracts, in: .month)
+        return NavigationLink {
+            RevenueDashboardView()
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Ce mois")
+                        .font(BeatDealTypography.caption)
+                        .foregroundStyle(BeatDealColors.textSecondary)
+                    Text("\(month.totalEUR) €")
+                        .font(BeatDealTypography.headline)
+                        .foregroundStyle(BeatDealColors.text)
+                    Text("\(month.contractCount) contrat\(month.contractCount > 1 ? "s" : "")")
+                        .font(BeatDealTypography.caption)
+                        .foregroundStyle(BeatDealColors.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(BeatDealColors.textSecondary)
+            }
+            .beatDealCard()
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

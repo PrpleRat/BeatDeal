@@ -31,6 +31,9 @@ struct Contract: Codable, Identifiable, Equatable {
     var maxStreams: Int
     var additionalClauses: String
     var pdfFileName: String?
+    var streamsReported: Int?
+    var expiresAt: Date?
+    var catalogBeatId: String?
 
     var reference: String { "BEAT-\(id.prefix(8).uppercased())" }
 
@@ -62,6 +65,7 @@ struct ContractDraft: Equatable {
     var rights: ContractRights = LicenseType.mp3Lease.defaultRights
     var maxStreams: Int = LicenseType.mp3Lease.defaultMaxStreams
     var additionalClauses: String = ""
+    var catalogBeatId: String?
 
     mutating func applyProfile(_ profile: ProducerProfile) {
         producerName = profile.producerName
@@ -77,6 +81,19 @@ struct ContractDraft: Equatable {
         maxStreams = template.maxStreams
         if additionalClauses.isEmpty {
             additionalClauses = template.defaultClause
+        }
+    }
+
+    mutating func applyCatalogBeat(_ beat: CatalogBeat, licenseType: LicenseType?) {
+        catalogBeatId = beat.id
+        beatTitle = beat.title
+        if let bpm = beat.bpm { self.bpm = String(bpm) }
+        if let key = beat.musicalKey, let mode = beat.keyMode {
+            selectedKey = MusicalKey.allCases.first { $0.label == key }
+            selectedMode = KeyMode.allCases.first { $0.rawValue == mode }
+        }
+        if let licenseType {
+            price = String(beat.prices.price(for: licenseType))
         }
     }
 
@@ -104,7 +121,11 @@ struct ContractDraft: Equatable {
             paymentReference: paymentReference.trimmingCharacters(in: .whitespaces),
             rights: rights,
             maxStreams: maxStreams,
-            additionalClauses: additionalClauses.trimmingCharacters(in: .whitespacesAndNewlines)
+            additionalClauses: additionalClauses.trimmingCharacters(in: .whitespacesAndNewlines),
+            pdfFileName: nil,
+            streamsReported: 0,
+            expiresAt: Contract.defaultExpiresAt(from: Date(), licenseType: licenseType),
+            catalogBeatId: catalogBeatId
         )
     }
 

@@ -14,6 +14,10 @@ Application iOS native (Swift/SwiftUI) — générateur de contrats de licence d
 - **Modèles personnalisables** : prix, streams max, droits par défaut, clauses
 - **Profil producteur** pré-rempli dans tous les contrats
 - **Paywall StoreKit 2** : 1er contrat gratuit, achat unique `beatdeal_pro` ensuite
+- **Calculateur de royalties** : estimation revenus / seuil de rentabilité par plateforme (JSON embarqué)
+- **Catalogue de beats** : beats + prix par licence, pré-remplissage des contrats
+- **Dashboard revenus** : totaux mois / trimestre / global + ventilation par licence
+- **Tracker de licences** : suivi streams + expiration, alertes push locales pour upgrades
 - **Zéro backend** — UserDefaults + fichiers PDF temporaires
 
 ## Prérequis

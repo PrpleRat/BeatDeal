@@ -5,6 +5,7 @@ struct NewContractView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileStorage = ProfileStorage.shared
     @ObservedObject private var templateStorage = TemplateStorage.shared
+    @ObservedObject private var catalogStorage = BeatCatalogStorage.shared
     @ObservedObject private var purchaseService = PurchaseService.shared
 
     @State private var draft = ContractDraft()
@@ -91,6 +92,11 @@ struct NewContractView: View {
                     draft.applyTemplate(template)
                 }
             }
+
+            if let licenseType = draft.licenseType {
+                let price = Int(draft.price) ?? templateStorage.template(for: licenseType).defaultPrice
+                RoyaltyCalculatorView(licenseType: licenseType, licensePrice: price)
+            }
         }
     }
 
@@ -103,6 +109,28 @@ struct NewContractView: View {
             BeatDealTextField(title: "Email de l'artiste", text: $draft.artistEmail, keyboard: .emailAddress, required: true)
 
             FormSectionHeader(title: "Infos beat")
+
+            if !catalogStorage.beats.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Depuis le catalogue")
+                        .font(BeatDealTypography.caption)
+                        .foregroundStyle(BeatDealColors.textSecondary)
+                    Picker("Beat du catalogue", selection: $draft.catalogBeatId) {
+                        Text("Saisie manuelle").tag(Optional<String>.none)
+                        ForEach(catalogStorage.beats) { beat in
+                            Text(beat.title).tag(Optional(beat.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(BeatDealColors.accentLight)
+                    .onChange(of: draft.catalogBeatId) { _, newId in
+                        if let beat = catalogStorage.beat(id: newId) {
+                            draft.applyCatalogBeat(beat, licenseType: draft.licenseType)
+                        }
+                    }
+                }
+            }
+
             BeatDealTextField(title: "Titre du beat", text: $draft.beatTitle, required: true)
             BeatDealTextField(title: "BPM", text: $draft.bpm, keyboard: .numberPad)
 

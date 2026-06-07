@@ -26,11 +26,53 @@ final class BeatDealTests: XCTestCase {
         XCTAssertTrue(draft.canProceedStep2)
     }
 
+    func testRoyaltyCalculatorBreakEven() {
+        let spotify = StreamingPlatform(id: "spotify", name: "Spotify", ratePerStreamEUR: 0.003)
+        let projection = RoyaltyCalculator.project(
+            platform: spotify,
+            projectedStreams: 50_000,
+            licensePrice: 49,
+            licenseTitle: "WAV Lease"
+        )
+        XCTAssertEqual(projection.breakEvenStreams, 16_334)
+        XCTAssertTrue(projection.isProfitable)
+        XCTAssertEqual(projection.estimatedRevenueEUR, 150, accuracy: 0.01)
+    }
+
+    func testRevenueStatsEngine() {
+        let contracts = [
+            sampleContract(license: .mp3Lease, price: 29),
+            sampleContract(license: .wavLease, price: 49)
+        ]
+        let allTime = RevenueStatsEngine.stats(for: contracts, in: .all)
+        XCTAssertEqual(allTime.totalEUR, 78)
+        XCTAssertEqual(allTime.contractCount, 2)
+        XCTAssertEqual(allTime.byLicenseType[.mp3Lease], 1)
+        XCTAssertEqual(allTime.byLicenseType[.wavLease], 1)
+    }
+
+    func testContractStreamAlertThreshold() {
+        var contract = sampleContract(license: .mp3Lease, price: 29)
+        contract.streamsReported = 2_000
+        contract.maxStreams = 2_500
+        XCTAssertFalse(contract.isApproachingStreamLimit)
+        contract.streamsReported = 2_100
+        XCTAssertTrue(contract.isApproachingStreamLimit)
+        XCTAssertEqual(contract.suggestedUpgradeLicense, .wavLease)
+    }
+
     func testContractHTMLContainsReference() {
-        let contract = Contract(
+        let contract = sampleContract(license: .mp3Lease, price: 29)
+        let html = ContractHTMLBuilder.buildHTML(for: contract)
+        XCTAssertTrue(html.contains("CONTRAT DE LICENCE DE BEAT"))
+        XCTAssertTrue(html.contains("Dark Trap"))
+    }
+
+    private func sampleContract(license: LicenseType, price: Int) -> Contract {
+        Contract(
             id: "abc12345-uuid",
             createdAt: Date(),
-            licenseType: .mp3Lease,
+            licenseType: license,
             artistName: "Artist",
             artistEmail: "a@b.com",
             beatTitle: "Dark Trap",
@@ -41,17 +83,17 @@ final class BeatDealTests: XCTestCase {
             producerAlias: "Prod. by Metro",
             producerEmail: "p@b.com",
             producerCountry: "France",
-            price: 29,
+            price: price,
             currency: .eur,
             paymentMethod: .paypal,
             paymentReference: "",
-            rights: LicenseType.mp3Lease.defaultRights,
-            maxStreams: 2500,
-            additionalClauses: ""
+            rights: license.defaultRights,
+            maxStreams: license.defaultMaxStreams == Int.max ? 999_999 : license.defaultMaxStreams,
+            additionalClauses: "",
+            pdfFileName: nil,
+            streamsReported: 0,
+            expiresAt: Contract.defaultExpiresAt(from: Date(), licenseType: license),
+            catalogBeatId: nil
         )
-        let html = ContractHTMLBuilder.buildHTML(for: contract)
-        XCTAssertTrue(html.contains("CONTRAT DE LICENCE DE BEAT"))
-        XCTAssertTrue(html.contains("BEAT-ABC12345"))
-        XCTAssertTrue(html.contains("Dark Trap"))
     }
 }

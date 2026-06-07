@@ -8,14 +8,24 @@ struct ContentView: View {
                     Label("Accueil", systemImage: "house.fill")
                 }
 
-            TemplatesView()
+            RevenueDashboardView()
                 .tabItem {
-                    Label("Modèles", systemImage: "doc.on.doc.fill")
+                    Label("Revenus", systemImage: "eurosign.circle.fill")
+                }
+
+            CatalogView()
+                .tabItem {
+                    Label("Catalogue", systemImage: "music.note.list")
+                }
+
+            LicenseTrackerView()
+                .tabItem {
+                    Label("Licences", systemImage: "bell.badge.fill")
                 }
 
             SettingsView()
                 .tabItem {
-                    Label("Paramètres", systemImage: "gearshape.fill")
+                    Label("Réglages", systemImage: "gearshape.fill")
                 }
         }
         .tint(BeatDealColors.accent)
