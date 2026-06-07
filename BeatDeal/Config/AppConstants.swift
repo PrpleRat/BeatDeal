@@ -1,0 +1,82 @@
+import Foundation
+
+enum AppConstants {
+    static let appName = "BeatDeal"
+    static let appTagline = "Licences pro en 60s"
+    static let bundleIdentifier = "com.cashthetrain.beatdeal"
+    static let privacyPolicyURL = "https://beatdeal.app/privacy"
+    static let productID = "beatdeal_pro"
+    static let freeContractLimit = 1
+
+    static let storageKeyContracts = "beatdeal.contracts"
+    static let storageKeyProfile = "beatdeal.profile"
+    static let storageKeyTemplates = "beatdeal.templates"
+    static let storageKeyIsPro = "beatdeal.is_pro"
+    static let storageKeyGeneratedCount = "beatdeal.generated_count"
+
+    static let revenueCatAPIKeyPlaceholder = "REVENUECAT_API_KEY_HERE"
+}
+
+enum Currency: String, Codable, CaseIterable, Identifiable {
+    case eur = "€"
+    case usd = "$"
+    case gbp = "£"
+
+    var id: String { rawValue }
+
+    var code: String {
+        switch self {
+        case .eur: return "EUR"
+        case .usd: return "USD"
+        case .gbp: return "GBP"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .eur: return "Euro (€)"
+        case .usd: return "Dollar ($)"
+        case .gbp: return "Livre (£)"
+        }
+    }
+}
+
+enum PaymentMethod: String, Codable, CaseIterable, Identifiable {
+    case paypal = "PayPal"
+    case virement = "Virement"
+    case lydia = "Lydia"
+    case especes = "Espèces"
+    case autre = "Autre"
+
+    var id: String { rawValue }
+}
+
+enum MusicalKey: String, CaseIterable, Identifiable {
+    case c, cSharp, d, dSharp, e, f, fSharp, g, gSharp, a, aSharp, b
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .c: return "C"
+        case .cSharp: return "C#"
+        case .d: return "D"
+        case .dSharp: return "D#"
+        case .e: return "E"
+        case .f: return "F"
+        case .fSharp: return "F#"
+        case .g: return "G"
+        case .gSharp: return "G#"
+        case .a: return "A"
+        case .aSharp: return "A#"
+        case .b: return "B"
+        }
+    }
+}
+
+enum KeyMode: String, CaseIterable, Identifiable {
+    case major = "Maj"
+    case minor = "Min"
+
+    var id: String { rawValue }
+}
