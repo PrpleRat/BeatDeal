@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Génère AppIcon.appiconset pour BeatDeal — fond noir + accent violet."""
+"""Génère AppIcon.appiconset pour BeatDeal — variante C violet subtil, plein canvas."""
 from __future__ import annotations
 
 import json
@@ -10,9 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ICONSET = ROOT / "BeatDeal" / "Resources" / "Assets.xcassets" / "AppIcon.appiconset"
 
-BG_R, BG_G, BG_B = 10, 10, 10
-ACCENT_R, ACCENT_G, ACCENT_B = 124, 58, 237
-CARD_R, CARD_G, CARD_B = 20, 20, 20
+BG = (14, 12, 20)
+VIOLET = (124, 58, 237)
+STRIPE_A = (48, 40, 72)
+STRIPE_B = (32, 28, 46)
 
 ICONS: list[tuple[str, int, str, str, str]] = [
     ("Icon-40.png", 40, "iphone", "20x20", "2x"),
@@ -42,43 +43,42 @@ def rgba_png(size: int, pixels: bytes) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", zlib.compress(rows, 9)) + _chunk(b"IEND", b"")
 
 
+def in_doc(lx: float, ly: float, doc_w: float, doc_h: float, radius: float) -> bool:
+    if lx < 0 or ly < 0 or lx > doc_w or ly > doc_h:
+        return False
+    r = radius
+    if lx < r and ly < r and (lx - r) ** 2 + (ly - r) ** 2 > r * r:
+        return False
+    if lx > doc_w - r and ly < r and (lx - (doc_w - r)) ** 2 + (ly - r) ** 2 > r * r:
+        return False
+    if lx < r and ly > doc_h - r and (lx - r) ** 2 + (ly - (doc_h - r)) ** 2 > r * r:
+        return False
+    if lx > doc_w - r and ly > doc_h - r and (lx - (doc_w - r)) ** 2 + (ly - (doc_h - r)) ** 2 > r * r:
+        return False
+    return True
+
+
 def draw_icon(size: int) -> bytes:
     buf = bytearray(size * size * 3)
     cx, cy = size / 2, size / 2
-    doc_w = size * 0.42
-    doc_h = size * 0.52
-    margin = size * 0.08
-    corner_r = size * 0.18
+    doc_w = size * 0.44
+    doc_h = size * 0.54
+    doc_r = size * 0.045
 
     for y in range(size):
         for x in range(size):
-            in_rounded_rect = True
-            for corner_x, corner_y in (
-                (margin, margin),
-                (size - margin, margin),
-                (margin, size - margin),
-                (size - margin, size - margin),
-            ):
-                if (x < margin or x >= size - margin) and (y < margin or y >= size - margin):
-                    dx, dy = x - corner_x, y - corner_y
-                    if dx * dx + dy * dy > corner_r * corner_r:
-                        in_rounded_rect = False
-                        break
+            lx = x - (cx - doc_w / 2)
+            ly = y - (cy - doc_h / 2)
 
-            lx, ly = x - (cx - doc_w / 2), y - (cy - doc_h / 2)
-            in_doc = 0 <= lx <= doc_w and 0 <= ly <= doc_h
-
-            if not in_rounded_rect:
-                pr, pg, pb = BG_R, BG_G, BG_B
-            elif in_doc:
-                if ly < doc_h * 0.18:
-                    pr, pg, pb = ACCENT_R, ACCENT_G, ACCENT_B
-                elif int(ly / (doc_h * 0.12)) % 2 == 0:
-                    pr, pg, pb = CARD_R + 8, CARD_G + 8, CARD_B + 8
+            if in_doc(lx, ly, doc_w, doc_h, doc_r):
+                if ly < doc_h * 0.17:
+                    pr, pg, pb = VIOLET
+                elif int((ly - doc_h * 0.17) / (doc_h * 0.105)) % 2 == 0:
+                    pr, pg, pb = STRIPE_A
                 else:
-                    pr, pg, pb = CARD_R, CARD_G, CARD_B
+                    pr, pg, pb = STRIPE_B
             else:
-                pr, pg, pb = BG_R, BG_G, BG_B
+                pr, pg, pb = BG
 
             i = (y * size + x) * 3
             buf[i], buf[i + 1], buf[i + 2] = pr, pg, pb
@@ -97,7 +97,7 @@ def main() -> None:
         )
 
     (ICONSET / "Contents.json").write_text(json.dumps(contents, indent=2), encoding="utf-8")
-    print(f"Généré {len(ICONS)} icônes dans {ICONSET}")
+    print(f"Généré {len(ICONS)} icônes (variante C) dans {ICONSET}")
 
 
 if __name__ == "__main__":
