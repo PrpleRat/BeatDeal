@@ -31,6 +31,7 @@ platform :ios do
 
     cert_id = lane_context[SharedValues::CERT_CERTIFICATE_ID]
     UI.user_error!("cert_id manquant après cert") if cert_id.to_s.empty?
+    UI.message("Certificat Apple ID: #{cert_id}")
 
     sigh(
       api_key: api_key,
@@ -73,6 +74,7 @@ platform :ios do
 
     cert_id = lane_context[SharedValues::CERT_CERTIFICATE_ID]
     UI.user_error!("cert_id manquant après cert") if cert_id.to_s.empty?
+    UI.message("Certificat Apple ID: #{cert_id}")
 
     sigh(
       api_key: api_key,
@@ -97,8 +99,29 @@ platform :ios do
       is_key_content_base64: false
     )
 
-    cert_id = ENV.fetch("DISTRIBUTION_CERT_ID")
+    keychain_path = ENV.fetch("KEYCHAIN_PATH")
+    keychain_password = ENV.fetch("KEYCHAIN_PASSWORD")
     profiles_path = ENV.fetch("PROFILES_PATH")
+    certs_path = ENV.fetch("CERTS_PATH")
+
+    cert_id = ENV["IOS_DISTRIBUTION_CERTIFICATE_ID"].to_s.strip
+    if cert_id.empty?
+      cert(
+        api_key: api_key,
+        development: false,
+        platform: "ios",
+        force: false,
+        keychain_path: keychain_path,
+        keychain_password: keychain_password,
+        output_path: certs_path
+      )
+      cert_id = lane_context[SharedValues::CERT_CERTIFICATE_ID].to_s
+    else
+      UI.message("IOS_DISTRIBUTION_CERTIFICATE_ID (secret) : #{cert_id}")
+    end
+
+    UI.user_error!("cert_id manquant — ajoute IOS_DISTRIBUTION_CERTIFICATE_ID ou relance bootstrap") if cert_id.empty?
+    UI.message("Certificat Apple ID (API): #{cert_id}")
 
     sigh(
       api_key: api_key,
