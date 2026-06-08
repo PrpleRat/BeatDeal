@@ -143,6 +143,7 @@ struct LicenseDetailView: View {
     @ObservedObject private var storage = ContractStorage.shared
     @State var contract: Contract
     @State private var streamsText = ""
+    @State private var showContractKit = false
 
     var body: some View {
         NavigationStack {
@@ -177,6 +178,9 @@ struct LicenseDetailView: View {
                         .beatDealCard()
                     }
 
+                    Button("DM Kit, PDF & livraison") { showContractKit = true }
+                        .buttonStyle(SecondaryButtonStyle())
+
                     Button("Enregistrer") { save() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
@@ -192,6 +196,9 @@ struct LicenseDetailView: View {
             }
             .onAppear {
                 streamsText = String(contract.streamsUsed)
+            }
+            .sheet(isPresented: $showContractKit) {
+                ContractDetailView(contract: contract)
             }
         }
     }

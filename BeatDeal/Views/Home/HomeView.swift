@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var shareURL: URL?
     @State private var showShare = false
     @State private var showNewSplit = false
+    @State private var selectedContract: Contract?
     @State private var alertMessage: String?
 
     var body: some View {
@@ -47,6 +48,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showNewSplit) {
                 NewSplitSheetView()
+            }
+            .sheet(item: $selectedContract) { contract in
+                ContractDetailView(contract: contract)
             }
             .alert("BeatDeal", isPresented: Binding(
                 get: { alertMessage != nil },
@@ -135,9 +139,11 @@ struct HomeView: View {
         } else {
             VStack(spacing: BeatDealSpacing.sm) {
                 ForEach(recent) { contract in
-                    ContractRowView(contract: contract) {
-                        shareAgain(contract)
-                    }
+                    ContractRowView(
+                        contract: contract,
+                        onOpen: { selectedContract = contract },
+                        onShare: { shareAgain(contract) }
+                    )
                 }
             }
         }

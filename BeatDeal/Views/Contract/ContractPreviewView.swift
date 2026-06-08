@@ -4,6 +4,7 @@ import WebKit
 struct ContractPreviewView: View {
     let contract: Contract
     let pdfURL: URL?
+    var allowEdit: Bool = true
     var onEdit: () -> Void
     var onSaved: () -> Void
 
@@ -101,14 +102,16 @@ struct ContractPreviewView: View {
             Button("Partager PDF") { showShare = true }
                 .buttonStyle(PrimaryButtonStyle())
 
-            Button("Enregistrer") { saveContract() }
+            Button(allowEdit ? "Enregistrer" : "Mettre à jour") { saveContract() }
                 .buttonStyle(SecondaryButtonStyle())
 
-            Button("Modifier") {
-                onEdit()
-                dismiss()
+            if allowEdit {
+                Button("Modifier") {
+                    onEdit()
+                    dismiss()
+                }
+                .buttonStyle(SecondaryButtonStyle())
             }
-            .buttonStyle(SecondaryButtonStyle())
         }
         .padding(BeatDealSpacing.md)
     }

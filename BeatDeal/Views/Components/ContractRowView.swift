@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContractRowView: View {
     let contract: Contract
+    var onOpen: () -> Void
     var onShare: () -> Void
 
     private var dateLabel: String {
@@ -13,27 +14,42 @@ struct ContractRowView: View {
 
     var body: some View {
         HStack(spacing: BeatDealSpacing.md) {
-            VStack(alignment: .leading, spacing: BeatDealSpacing.xs) {
-                Text(contract.artistName)
-                    .font(BeatDealTypography.headline)
-                    .foregroundStyle(BeatDealColors.text)
+            Button(action: onOpen) {
+                HStack(spacing: BeatDealSpacing.md) {
+                    VStack(alignment: .leading, spacing: BeatDealSpacing.xs) {
+                        Text(contract.displayBeatTitle)
+                            .font(BeatDealTypography.headline)
+                            .foregroundStyle(BeatDealColors.text)
+                            .lineLimit(1)
 
-                HStack(spacing: BeatDealSpacing.sm) {
-                    Text(contract.licenseType.title)
-                        .font(BeatDealTypography.badge)
-                        .foregroundStyle(contract.licenseType.badgeColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(BeatDealColors.separator)
-                        .clipShape(Capsule())
+                        Text(contract.artistName)
+                            .font(BeatDealTypography.caption)
+                            .foregroundStyle(BeatDealColors.textSecondary)
+                            .lineLimit(1)
 
-                    Text(dateLabel)
-                        .font(BeatDealTypography.caption)
+                        HStack(spacing: BeatDealSpacing.sm) {
+                            Text(contract.licenseType.title)
+                                .font(BeatDealTypography.badge)
+                                .foregroundStyle(contract.licenseType.badgeColor)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(BeatDealColors.separator)
+                                .clipShape(Capsule())
+
+                            Text(dateLabel)
+                                .font(BeatDealTypography.caption)
+                                .foregroundStyle(BeatDealColors.textSecondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
                         .foregroundStyle(BeatDealColors.textSecondary)
                 }
             }
-
-            Spacer()
+            .buttonStyle(.plain)
 
             Button(action: onShare) {
                 Image(systemName: "paperplane.fill")
