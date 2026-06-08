@@ -38,6 +38,9 @@ final class ContractStorage: ObservableObject {
     func delete(_ contract: Contract) {
         contracts.removeAll { $0.id == contract.id }
         persist()
+        Task {
+            await LicenseAlertService.shared.refreshAlerts(for: contracts)
+        }
     }
 
     func recent(limit: Int = 5) -> [Contract] {

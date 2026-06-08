@@ -144,6 +144,7 @@ struct LicenseDetailView: View {
     @State var contract: Contract
     @State private var streamsText = ""
     @State private var showContractKit = false
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -183,6 +184,11 @@ struct LicenseDetailView: View {
 
                     Button("Enregistrer") { save() }
                         .buttonStyle(PrimaryButtonStyle())
+
+                    Button("Supprimer le contrat", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
                 .padding(BeatDealSpacing.md)
             }
@@ -193,6 +199,19 @@ struct LicenseDetailView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Fermer") { dismiss() }
                 }
+            }
+            .confirmationDialog(
+                "Supprimer ce contrat ?",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Supprimer", role: .destructive) {
+                    storage.delete(contract)
+                    dismiss()
+                }
+                Button("Annuler", role: .cancel) {}
+            } message: {
+                Text("« \(contract.beatTitle) » sera définitivement supprimé.")
             }
             .onAppear {
                 streamsText = String(contract.streamsUsed)

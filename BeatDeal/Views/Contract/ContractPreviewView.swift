@@ -7,6 +7,7 @@ struct ContractPreviewView: View {
     var allowEdit: Bool = true
     var onEdit: () -> Void
     var onSaved: () -> Void
+    var onDelete: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileStorage = ProfileStorage.shared
@@ -14,6 +15,7 @@ struct ContractPreviewView: View {
     @State private var workingContract: Contract
     @State private var selectedTab = 0
     @State private var showShare = false
+    @State private var showDeleteConfirm = false
     @State private var alertMessage: String?
 
     init(
@@ -21,13 +23,15 @@ struct ContractPreviewView: View {
         pdfURL: URL?,
         allowEdit: Bool = true,
         onEdit: @escaping () -> Void,
-        onSaved: @escaping () -> Void
+        onSaved: @escaping () -> Void,
+        onDelete: (() -> Void)? = nil
     ) {
         self.contract = contract
         self.pdfURL = pdfURL
         self.allowEdit = allowEdit
         self.onEdit = onEdit
         self.onSaved = onSaved
+        self.onDelete = onDelete
         _workingContract = State(initialValue: contract)
     }
 
@@ -64,6 +68,28 @@ struct ContractPreviewView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Fermer") { dismiss() }
                 }
+                if onDelete != nil {
+                    ToolbarItem(placement: .destructiveAction) {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                    }
+                }
+            }
+            .confirmationDialog(
+                "Supprimer ce contrat ?",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Supprimer", role: .destructive) {
+                    onDelete?()
+                    dismiss()
+                }
+                Button("Annuler", role: .cancel) {}
+            } message: {
+                Text("« \(workingContract.displayBeatTitle) » sera définitivement supprimé.")
             }
             .sheet(isPresented: $showShare) {
                 if let pdfURL {

@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var showShare = false
     @State private var showNewSplit = false
     @State private var selectedContract: Contract?
+    @State private var contractPendingDelete: Contract?
     @State private var alertMessage: String?
 
     var body: some View {
@@ -59,6 +60,31 @@ struct HomeView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(alertMessage ?? "")
+            }
+            .confirmationDialog(
+                "Supprimer ce contrat ?",
+                isPresented: Binding(
+                    get: { contractPendingDelete != nil },
+                    set: { if !$0 { contractPendingDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Supprimer", role: .destructive) {
+                    if let contract = contractPendingDelete {
+                        storage.delete(contract)
+                        if selectedContract?.id == contract.id {
+                            selectedContract = nil
+                        }
+                        contractPendingDelete = nil
+                    }
+                }
+                Button("Annuler", role: .cancel) {
+                    contractPendingDelete = nil
+                }
+            } message: {
+                if let contract = contractPendingDelete {
+                    Text("« \(contract.displayBeatTitle) » sera définitivement supprimé.")
+                }
             }
         }
     }
@@ -142,7 +168,8 @@ struct HomeView: View {
                     ContractRowView(
                         contract: contract,
                         onOpen: { selectedContract = contract },
-                        onShare: { shareAgain(contract) }
+                        onShare: { shareAgain(contract) },
+                        onDelete: { contractPendingDelete = contract }
                     )
                 }
             }

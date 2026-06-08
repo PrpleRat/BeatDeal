@@ -5,6 +5,7 @@ struct ContractDetailView: View {
     let contract: Contract
 
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var storage = ContractStorage.shared
     @State private var pdfURL: URL?
     @State private var loadError: String?
 
@@ -16,7 +17,8 @@ struct ContractDetailView: View {
                     pdfURL: pdfURL,
                     allowEdit: false,
                     onEdit: {},
-                    onSaved: { dismiss() }
+                    onSaved: { dismiss() },
+                    onDelete: { storage.delete(contract) }
                 )
             } else if let loadError {
                 VStack(spacing: BeatDealSpacing.md) {

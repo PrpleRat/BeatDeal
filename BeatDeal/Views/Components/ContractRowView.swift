@@ -4,6 +4,7 @@ struct ContractRowView: View {
     let contract: Contract
     var onOpen: () -> Void
     var onShare: () -> Void
+    var onDelete: (() -> Void)?
 
     private var dateLabel: String {
         let formatter = DateFormatter()
@@ -61,5 +62,10 @@ struct ContractRowView: View {
             .buttonStyle(.plain)
         }
         .beatDealCard()
+        .contextMenu {
+            if let onDelete {
+                Button("Supprimer", systemImage: "trash", role: .destructive, action: onDelete)
+            }
+        }
     }
 }
