@@ -36,6 +36,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Préparer scripts CI (LF, compatible Windows)
+        run: |
+          for f in ci/*.sh; do tr -d '\r' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
+
       - name: Sélectionner Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -44,17 +48,18 @@ jobs:
       - name: Vérifier la structure
         run: |
           test -f project.yml
-          test -f ci/install-signing.sh
+          test -f ci/install_signing.py
           test -d BeatDeal
           bash ci/verify-no-critical-entitlements.sh
           xcodebuild -version
 
       - name: Installer certificat Distribution (réutilisé — pas de nouveau cert)
         env:
+          CI_APP_SLUG: beatdeal
           IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
           IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: bash ci/install-signing.sh
+        run: python3 ci/install_signing.py
 
       - name: Régénérer profil App Store (API Apple)
         env:
@@ -62,6 +67,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          IOS_DISTRIBUTION_CERTIFICATE_ID: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_ID }}
         run: |
           if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_PRIVATE_KEY" ]; then
             echo "::error::Secrets ASC_* requis pour le profil"
@@ -113,6 +119,8 @@ jobs:
           fi
 
       - name: Préparer le trousseau pour codesign
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           bash ci/keychain-unlock.sh
           security list-keychains -d user -s "$KEYCHAIN_PATH"
@@ -153,6 +161,7 @@ jobs:
         env:
           ARCHIVE_PATH: ${{ runner.temp }}/BeatDeal.xcarchive
           EXPORT_PATH: ${{ runner.temp }}/export
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           set -euo pipefail
           bash ci/keychain-unlock.sh
