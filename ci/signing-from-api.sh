@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # DÉPRÉCIÉ pour TestFlight CI — recréait un certificat à chaque run.
-# Utiliser install-signing.sh + refresh-profiles-api.sh (workflow TestFlight).
+# Utiliser install_signing.py + refresh-profiles-api.sh (workflow TestFlight).
 # Conservé pour référence / bootstrap manuel uniquement.
 set -euo pipefail
 
