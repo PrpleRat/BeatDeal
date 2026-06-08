@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Certificat Distribution + profil App Store via API Apple (TestFlight CI).
+# DÉPRÉCIÉ pour TestFlight CI — recréait un certificat à chaque run.
+# Utiliser install-signing.sh + refresh-profiles-api.sh (workflow TestFlight).
+# Conservé pour référence / bootstrap manuel uniquement.
 set -euo pipefail
 
 : "${ASC_KEY_ID:?}"

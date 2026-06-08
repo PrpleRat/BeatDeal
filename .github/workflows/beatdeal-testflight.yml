@@ -1,4 +1,4 @@
-# Archive Release + IPA + TestFlight — signing via API Apple (certificat + profil frais à chaque run).
+# Archive Release + IPA + TestFlight — certificat réutilisé (secrets) + profil frais à chaque run.
 
 name: BeatDeal TestFlight
 
@@ -44,22 +44,30 @@ jobs:
       - name: Vérifier la structure
         run: |
           test -f project.yml
-          test -f ci/signing-from-api.sh
+          test -f ci/install-signing.sh
           test -d BeatDeal
           bash ci/verify-no-critical-entitlements.sh
           xcodebuild -version
 
-      - name: Signing via API Apple (certificat + profil frais)
+      - name: Installer certificat Distribution (réutilisé — pas de nouveau cert)
+        env:
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: bash ci/install-signing.sh
+
+      - name: Régénérer profil App Store (API Apple)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_PRIVATE_KEY" ]; then
-            echo "::error::Secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY requis"
+            echo "::error::Secrets ASC_* requis pour le profil"
             exit 1
           fi
-          bash ci/signing-from-api.sh
+          bash ci/refresh-profiles-api.sh
 
       - name: Générer les icônes App Store
         run: python3 ci/generate-app-icons.py
@@ -104,6 +112,12 @@ jobs:
             exit 1
           fi
 
+      - name: Préparer le trousseau pour codesign
+        run: |
+          bash ci/keychain-unlock.sh
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Archive (Release, signature manuelle)
         env:
           ARCHIVE_PATH: ${{ runner.temp }}/BeatDeal.xcarchive
@@ -122,6 +136,7 @@ jobs:
             DEVELOPMENT_TEAM="${{ env.DEVELOPMENT_TEAM }}" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="${IOS_APP_PROFILE_UUID}" \
             CURRENT_PROJECT_VERSION="${{ steps.buildno.outputs.value }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             2>&1 | tee "$LOG"
@@ -140,6 +155,7 @@ jobs:
           EXPORT_PATH: ${{ runner.temp }}/export
         run: |
           set -euo pipefail
+          bash ci/keychain-unlock.sh
           rm -rf "$EXPORT_PATH"
           mkdir -p "$EXPORT_PATH"
           xcodebuild -exportArchive \
@@ -147,6 +163,11 @@ jobs:
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist ExportOptions-ci.plist
           test -f "$EXPORT_PATH/BeatDeal.ipa" || (echo "BeatDeal.ipa introuvable" && exit 1)
+
+      - name: Vérifier signature Distribution (anti ITMS-90035)
+        env:
+          EXPORT_PATH: ${{ runner.temp }}/export
+        run: bash ci/verify-ipa-signature.sh "$EXPORT_PATH/BeatDeal.ipa"
 
       - name: Vérifier CFBundleVersion dans l'IPA
         env:

@@ -19,8 +19,17 @@ Guide complet : [APPLE-DEVELOPER-SETUP.md](APPLE-DEVELOPER-SETUP.md)
 | `ASC_KEY_ID` | ID de la clé API |
 | `ASC_ISSUER_ID` | Issuer ID du compte |
 | `ASC_PRIVATE_KEY` | Contenu du fichier `.p8` (copier-coller entier) |
+| `IOS_DISTRIBUTION_CERTIFICATE_BASE64` | Certificat `.p12` (bootstrap, **réutilisé**) |
+| `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD` | Mot de passe du `.p12` |
+| `KEYCHAIN_PASSWORD` | Mot de passe trousseau CI |
 
-Le workflow **BeatDeal TestFlight** crée certificat + profil à chaque run via `signing-from-api.sh` — pas besoin de secrets `IOS_DISTRIBUTION_*`.
+**Important :** un seul certificat **Apple Distribution** suffit pour **toutes** tes apps (BeatDeal, Panium, TrajOc, CarenceScan, etc.). Ne le recrée pas à chaque build — Apple limite à **2** certificats actifs. Le workflow **réutilise** le `.p12` et ne régénère que le **profil** App Store.
+
+## Première fois — Bootstrap (optionnel, sans Mac)
+
+1. Ajouter les 3 secrets `ASC_*`
+2. **Actions** → **BeatDeal — Bootstrap signing (sans Mac)** → **Run workflow** (une fois, n'importe quel repo suffit si tu as déjà le `.p12`)
+3. Copier `IOS_DISTRIBUTION_CERTIFICATE_BASE64`, `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD` et `KEYCHAIN_PASSWORD` dans **chaque** repo GitHub
 
 ## Envoyer une build TestFlight
 
@@ -28,10 +37,6 @@ Le workflow **BeatDeal TestFlight** crée certificat + profil à chaque run via 
 2. Laisser **Uploader vers TestFlight** coché
 3. Attendre ~15–25 min
 4. App Store Connect → **TestFlight** → build **Processing** → **Ready to test**
-
-## Bootstrap signing (optionnel)
-
-**Actions** → **BeatDeal — Bootstrap signing (sans Mac)** — génère un artifact `signing-files` (utile si tu veux une copie locale cert + profil).
 
 ## Build simulateur
 
