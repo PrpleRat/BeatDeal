@@ -2,8 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var profileStorage = ProfileStorage.shared
-    @ObservedObject private var purchaseService = PurchaseService.shared
-    @State private var alertMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -50,22 +48,6 @@ struct SettingsView: View {
                     LabeledContent("Version", value: Bundle.main.appVersion)
 
                     Link("Politique de confidentialité", destination: URL(string: AppConstants.privacyPolicyURL)!)
-
-                    Button("Restaurer l'achat") {
-                        Task {
-                            await purchaseService.restorePurchases()
-                            if let error = purchaseService.lastError {
-                                alertMessage = error
-                            } else if purchaseService.isPro {
-                                alertMessage = "Achat restauré avec succès."
-                            }
-                        }
-                    }
-
-                    if purchaseService.isPro {
-                        Label("BeatDeal Pro activé", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(BeatDealColors.success)
-                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -73,14 +55,6 @@ struct SettingsView: View {
             .navigationTitle("Paramètres")
             .onDisappear {
                 profileStorage.save()
-            }
-            .alert("BeatDeal", isPresented: Binding(
-                get: { alertMessage != nil },
-                set: { if !$0 { alertMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(alertMessage ?? "")
             }
         }
     }

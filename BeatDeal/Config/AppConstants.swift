@@ -5,14 +5,11 @@ enum AppConstants {
     static let appTagline = "Licences pro en 60s"
     static let bundleIdentifier = "com.cashthetrain.beatdeal"
     static let privacyPolicyURL = "https://beatdeal.app/privacy"
-    static let productID = "beatdeal_pro"
-    static let freeContractLimit = 1
+    static let appStorePriceEUR = 4.99
 
     static let storageKeyContracts = "beatdeal.contracts"
     static let storageKeyProfile = "beatdeal.profile"
     static let storageKeyTemplates = "beatdeal.templates"
-    static let storageKeyIsPro = "beatdeal.is_pro"
-    static let storageKeyGeneratedCount = "beatdeal.generated_count"
     static let storageKeyCatalog = "beatdeal.catalog"
     static let storageKeyPacks = "beatdeal.packs"
 

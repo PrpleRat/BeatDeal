@@ -2,7 +2,7 @@
 
 Application iOS native (Swift/SwiftUI) — générateur de contrats de licence de beats professionnels en moins de 60 secondes.
 
-100 % offline · PDF local · Achat unique BeatDeal Pro (4,99 €).
+100 % offline · PDF local · **App payante** sur l'App Store (4,99 €).
 
 ## Fonctionnalités
 
@@ -13,7 +13,7 @@ Application iOS native (Swift/SwiftUI) — générateur de contrats de licence d
 - **Contrats récents** sur l'écran d'accueil (5 derniers)
 - **Modèles personnalisables** : prix, streams max, droits par défaut, clauses
 - **Profil producteur** pré-rempli dans tous les contrats
-- **Paywall StoreKit 2** : 1er contrat gratuit, achat unique `beatdeal_pro` ensuite
+- **App payante** : toutes les fonctions incluses (pas d'achat in-app)
 - **Calculateur de royalties** : estimation revenus / seuil de rentabilité par plateforme (JSON embarqué)
 - **Catalogue de beats** : beats + prix par licence, pré-remplissage des contrats
 - **Dashboard revenus** : totaux mois / trimestre / global + ventilation par licence
@@ -65,7 +65,7 @@ open BeatDeal.xcodeproj
 
 1. Sélectionner ta **Team** dans Signing & Capabilities
 2. Bundle ID : `com.cashthetrain.beatdeal`
-3. Configurer l'IAP `beatdeal_pro` dans App Store Connect
+3. Bundle ID : `com.cashthetrain.beatdeal`
 4. Build & Run sur iPhone
 
 ## CI GitHub Actions
@@ -84,7 +84,7 @@ open BeatDeal.xcodeproj
 ├── BeatDeal/              # App principale
 │   ├── Config/
 │   ├── Models/
-│   ├── Services/          # Storage, PDF, achats
+│   ├── Services/          # Storage, PDF
 │   ├── Theme/
 │   ├── Views/
 │   └── Resources/
@@ -104,7 +104,8 @@ open BeatDeal.xcodeproj
 | **Sous-titre** | Licences pro en 60s |
 | **Bundle ID** | `com.cashthetrain.beatdeal` |
 | **Catégorie** | Musique / Business |
-| **IAP** | `beatdeal_pro` — 4,99 € (non-consommable) |
+| **Prix** | 4,99 € (app payante — tarif dans App Store Connect) |
+| **Monétisation** | Aucun achat in-app |
 
 ## Tests
 

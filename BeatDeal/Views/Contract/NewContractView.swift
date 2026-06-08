@@ -6,7 +6,6 @@ struct NewContractView: View {
     @ObservedObject private var profileStorage = ProfileStorage.shared
     @ObservedObject private var templateStorage = TemplateStorage.shared
     @ObservedObject private var catalogStorage = BeatCatalogStorage.shared
-    @ObservedObject private var purchaseService = PurchaseService.shared
 
     @State private var draft = ContractDraft()
     @State private var previewContract: Contract?
@@ -54,9 +53,6 @@ struct NewContractView: View {
                         dismiss()
                     }
                 )
-            }
-            .sheet(isPresented: $purchaseService.showPaywall) {
-                PaywallView(purchaseService: purchaseService)
             }
             .alert("BeatDeal", isPresented: Binding(
                 get: { alertMessage != nil },
@@ -299,7 +295,6 @@ struct NewContractView: View {
     }
 
     private func generateContract() async {
-        guard purchaseService.checkPaywallBeforeGenerate() else { return }
         guard let contract = draft.buildContract() else {
             alertMessage = "Vérifie les champs obligatoires."
             return
@@ -310,7 +305,6 @@ struct NewContractView: View {
 
         do {
             let url = try PDFGenerator.generatePDF(for: contract)
-            purchaseService.recordGeneration()
             previewPDFURL = url
             previewContract = contract
         } catch {

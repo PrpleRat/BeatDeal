@@ -44,15 +44,15 @@ Complète plus tard (pas bloquant pour TestFlight) :
 
 ---
 
-## Étape 3 — Créer l'achat in-app (BeatDeal Pro)
+## Étape 3 — Définir le prix de l'app (app payante)
 
-1. App Store Connect → **BeatDeal** → **Monetization** → **In-App Purchases**
-2. **+** → **Non-Consumable**
-3. **Product ID** : `beatdeal_pro` (doit correspondre à `AppConstants.productID`)
-4. **Price** : 4,99 €
-5. Nom + description en français → **Save**
+BeatDeal est vendue **directement sur l'App Store** — pas d'achat in-app dans l'app.
 
-> L'IAP n'est pas bloquant pour TestFlight interne, mais requis pour tester les achats en sandbox.
+1. App Store Connect → **BeatDeal** → **Pricing and Availability**
+2. **Price** : 4,99 € (ou le tier de ton choix)
+3. Disponibilité : pays souhaités → **Save**
+
+> TestFlight : les testeurs internes installent gratuitement. Seuls les acheteurs sur l'App Store paient.
 
 ---
 
@@ -107,7 +107,7 @@ git push -u origin main
 - [ ] Compte Apple Developer actif
 - [ ] App ID `com.cashthetrain.beatdeal` créé
 - [ ] App **BeatDeal** créée dans App Store Connect
-- [ ] IAP `beatdeal_pro` créé (optionnel pour TestFlight, requis pour achats)
+- [ ] Prix **4,99 €** configuré (Pricing and Availability)
 - [ ] Clé API ASC + 3 secrets GitHub
 - [ ] Repo GitHub poussé
 - [ ] Workflow **BeatDeal TestFlight** exécuté avec succès
