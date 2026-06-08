@@ -2,6 +2,8 @@ import SwiftUI
 import WebKit
 
 struct NewContractView: View {
+    var splitImport: SplitPadImport? = nil
+
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileStorage = ProfileStorage.shared
     @ObservedObject private var templateStorage = TemplateStorage.shared
@@ -64,6 +66,7 @@ struct NewContractView: View {
             }
             .onAppear {
                 draft.applyProfile(profileStorage.profile)
+                applySplitImportIfNeeded()
             }
         }
     }
@@ -310,5 +313,31 @@ struct NewContractView: View {
         } catch {
             alertMessage = "Erreur PDF : \(error.localizedDescription)"
         }
+    }
+
+    private func applySplitImportIfNeeded() {
+        guard let splitImport else { return }
+
+        draft.beatTitle = splitImport.title
+        if let artist = splitImport.artist, !artist.isEmpty {
+            draft.artistName = artist
+        }
+
+        let splitNote = "Répartition validée via SplitPad (ref \(splitImport.ref))."
+        if draft.additionalClauses.isEmpty {
+            draft.additionalClauses = splitNote
+        } else if !draft.additionalClauses.contains(splitImport.ref) {
+            draft.additionalClauses += "\n\n\(splitNote)"
+        }
+
+        if let name = splitImport.coProducerName,
+           let share = splitImport.coProducerSharePercent,
+           share > 0 {
+            draft.enableCoProducer = true
+            draft.coProducer.name = name
+            draft.coProducer.sharePercent = share
+        }
+
+        draft.step = 2
     }
 }
