@@ -16,9 +16,16 @@ struct ContractPreviewView: View {
     @State private var showShare = false
     @State private var alertMessage: String?
 
-    init(contract: Contract, pdfURL: URL?, onEdit: @escaping () -> Void, onSaved: @escaping () -> Void) {
+    init(
+        contract: Contract,
+        pdfURL: URL?,
+        allowEdit: Bool = true,
+        onEdit: @escaping () -> Void,
+        onSaved: @escaping () -> Void
+    ) {
         self.contract = contract
         self.pdfURL = pdfURL
+        self.allowEdit = allowEdit
         self.onEdit = onEdit
         self.onSaved = onSaved
         _workingContract = State(initialValue: contract)
