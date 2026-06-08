@@ -2,7 +2,7 @@ import Foundation
 
 enum AppConstants {
     static let appName = "BeatDeal"
-    static let appTagline = "Licences pro en 60s"
+    static let appTagline = "Splits · Licences · Studio"
     static let bundleIdentifier = "com.cashthetrain.beatdeal"
     static let privacyPolicyURL = "https://beatdeal.app/privacy"
     static let appStorePriceEUR = 4.99
@@ -12,6 +12,9 @@ enum AppConstants {
     static let storageKeyTemplates = "beatdeal.templates"
     static let storageKeyCatalog = "beatdeal.catalog"
     static let storageKeyPacks = "beatdeal.packs"
+    static let storageKeySplits = "beatdeal.splits"
+
+    static let splitGenres = ["Rap FR", "Trap", "Drill", "Afro", "R&B", "Pop", "Autre"]
 
     static let streamAlertThreshold = 0.8
     static let licenseExpiryWarningDays = 14

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var deepLinkRouter: DeepLinkRouter
-    @State private var showContractFromSplit = false
+    @State private var showSplitFromLink = false
     @State private var splitImport: SplitPadImport?
 
     var body: some View {
@@ -36,14 +36,14 @@ struct ContentView: View {
         .onChange(of: deepLinkRouter.pendingSplitImport?.id) { _, _ in
             guard let pending = deepLinkRouter.pendingSplitImport else { return }
             splitImport = pending
-            showContractFromSplit = true
+            showSplitFromLink = true
         }
-        .sheet(isPresented: $showContractFromSplit, onDismiss: {
+        .sheet(isPresented: $showSplitFromLink, onDismiss: {
             _ = deepLinkRouter.consumePendingImport()
             splitImport = nil
         }) {
             if let splitImport {
-                NewContractView(splitImport: splitImport)
+                NewSplitSheetView(splitImport: splitImport)
             }
         }
     }

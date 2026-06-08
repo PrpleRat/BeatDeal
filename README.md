@@ -18,7 +18,9 @@ Application iOS native (Swift/SwiftUI) — générateur de contrats de licence d
 - **Catalogue de beats** : beats + prix par licence, pré-remplissage des contrats
 - **Dashboard revenus** : totaux mois / trimestre / global + ventilation par licence
 - **Tracker de licences** : suivi streams + expiration, alertes push locales pour upgrades
+- **Split en 90s** : split sheet studio (master / publishing, sliders, PDF, historique)
 - **Mode co-prod** : co-producteur + % sur fiche beat, PDF split sheet aligné
+- **Liens apps** : reçoit les splits depuis SplitPad (`beatdeal://split`) · exporte vers BeatBill (`beatbill://invoice`)
 - **DM Kit** : message Instagram/iMessage pré-rédigé avec lien de paiement
 - **Checklist de livraison** : 5 étapes avant envoi final
 - **Packs de beats** : bundles multi-beats avec contrat PDF unifié

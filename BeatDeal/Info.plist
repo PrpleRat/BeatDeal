@@ -43,5 +43,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>beatbill</string>
+	</array>
 </dict>
 </plist>

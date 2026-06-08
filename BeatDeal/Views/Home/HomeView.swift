@@ -3,9 +3,11 @@ import UIKit
 
 struct HomeView: View {
     @ObservedObject private var storage = ContractStorage.shared
+    @ObservedObject private var splitStorage = SplitSheetStorage.shared
     @State private var shareContract: Contract?
     @State private var shareURL: URL?
     @State private var showShare = false
+    @State private var showNewSplit = false
     @State private var alertMessage: String?
 
     var body: some View {
@@ -21,6 +23,15 @@ struct HomeView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
+                    Button {
+                        showNewSplit = true
+                    } label: {
+                        Label("+ Split en 90s", systemImage: "person.2.fill")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+
+                    splitRecentSection
+
                     revenueSummary
 
                     recentSection
@@ -34,6 +45,9 @@ struct HomeView: View {
                     ShareSheet(items: [shareURL])
                 }
             }
+            .sheet(isPresented: $showNewSplit) {
+                NewSplitSheetView()
+            }
             .alert("BeatDeal", isPresented: Binding(
                 get: { alertMessage != nil },
                 set: { if !$0 { alertMessage = nil } }
@@ -41,6 +55,32 @@ struct HomeView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(alertMessage ?? "")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var splitRecentSection: some View {
+        let recent = splitStorage.recent(limit: 3)
+        if !recent.isEmpty {
+            Text("Splits récents")
+                .font(BeatDealTypography.headline)
+                .foregroundStyle(BeatDealColors.text)
+            VStack(spacing: BeatDealSpacing.sm) {
+                ForEach(recent) { split in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(split.title)
+                                .font(BeatDealTypography.body)
+                                .foregroundStyle(BeatDealColors.text)
+                            Text("\(split.ref) · \(split.collaborators.count) collab.")
+                                .font(BeatDealTypography.caption)
+                                .foregroundStyle(BeatDealColors.textSecondary)
+                        }
+                        Spacer()
+                    }
+                    .beatDealCard()
+                }
             }
         }
     }
