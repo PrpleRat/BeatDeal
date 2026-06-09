@@ -10,7 +10,7 @@ struct SplitSheetPreviewView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showShare = false
     @State private var showContract = false
-    @State private var splitImport: SplitPadImport?
+    @State private var beatBillMissing = false
 
     var body: some View {
         NavigationStack {
@@ -31,29 +31,16 @@ struct SplitSheetPreviewView: View {
                     }
 
                     Button("Créer un contrat de licence") {
-                        splitImport = SplitPadImport(
-                            ref: split.ref,
-                            title: split.title,
-                            artist: split.artist,
-                            coProducerName: split.collaborators.count > 1 ? split.collaborators[1].name : nil,
-                            coProducerSharePercent: split.collaborators.count > 1 ? split.collaborators[1].masterShare : nil
-                        )
                         showContract = true
                     }
                     .buttonStyle(SecondaryButtonStyle())
 
-                    if let artist = split.artist, !artist.isEmpty {
-                        Button("Facturer avec BeatBill") {
-                            let email = split.collaborators.first(where: { $0.name == artist })?.email ?? ""
-                            BeatBillLink.openInvoice(
-                                clientName: artist,
-                                clientEmail: email,
-                                project: split.title,
-                                note: "Split \(split.ref)"
-                            )
+                    Button("Facturer avec BeatBill") {
+                        if !BeatBillLink.openInvoice(from: split) {
+                            beatBillMissing = true
                         }
-                        .buttonStyle(SecondaryButtonStyle())
                     }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
                 .padding(BeatDealSpacing.md)
                 .background(BeatDealColors.card)
@@ -75,11 +62,27 @@ struct SplitSheetPreviewView: View {
                 }
             }
             .sheet(isPresented: $showContract) {
-                if let splitImport {
-                    NewContractView(splitImport: splitImport)
-                }
+                NewContractView(splitImport: split.asSplitPadImport())
+            }
+            .alert("BeatBill introuvable", isPresented: $beatBillMissing) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Installe BeatBill pour facturer depuis ce split.")
             }
         }
+    }
+}
+
+private extension SplitSheet {
+    func asSplitPadImport() -> SplitPadImport {
+        let coProd = collaborators.dropFirst().first
+        return SplitPadImport(
+            ref: ref,
+            title: title,
+            artist: artist,
+            coProducerName: coProd?.name,
+            coProducerSharePercent: coProd?.masterShare
+        )
     }
 }
 

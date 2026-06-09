@@ -17,6 +17,7 @@ struct ContractPreviewView: View {
     @State private var showShare = false
     @State private var showDeleteConfirm = false
     @State private var alertMessage: String?
+    @State private var beatBillMissing = false
 
     init(
         contract: Contract,
@@ -104,6 +105,11 @@ struct ContractPreviewView: View {
             } message: {
                 Text(alertMessage ?? "")
             }
+            .alert("BeatBill introuvable", isPresented: $beatBillMissing) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Installe BeatBill pour générer la facture depuis ce contrat.")
+            }
         }
     }
 
@@ -131,20 +137,29 @@ struct ContractPreviewView: View {
     }
 
     private var actionBar: some View {
-        HStack(spacing: BeatDealSpacing.sm) {
-            Button("Partager PDF") { showShare = true }
-                .buttonStyle(PrimaryButtonStyle())
+        VStack(spacing: BeatDealSpacing.sm) {
+            HStack(spacing: BeatDealSpacing.sm) {
+                Button("Partager PDF") { showShare = true }
+                    .buttonStyle(PrimaryButtonStyle())
 
-            Button(allowEdit ? "Enregistrer" : "Mettre à jour") { saveContract() }
-                .buttonStyle(SecondaryButtonStyle())
+                Button(allowEdit ? "Enregistrer" : "Mettre à jour") { saveContract() }
+                    .buttonStyle(SecondaryButtonStyle())
 
-            if allowEdit {
-                Button("Modifier") {
-                    onEdit()
-                    dismiss()
+                if allowEdit {
+                    Button("Modifier") {
+                        onEdit()
+                        dismiss()
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
-                .buttonStyle(SecondaryButtonStyle())
             }
+
+            Button("Facturer avec BeatBill") {
+                if !BeatBillLink.openInvoice(from: workingContract) {
+                    beatBillMissing = true
+                }
+            }
+            .buttonStyle(SecondaryButtonStyle())
         }
         .padding(BeatDealSpacing.md)
     }

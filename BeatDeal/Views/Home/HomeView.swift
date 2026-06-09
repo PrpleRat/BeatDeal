@@ -185,7 +185,7 @@ struct HomeView: View {
                     Text("Ce mois")
                         .font(BeatDealTypography.caption)
                         .foregroundStyle(BeatDealColors.textSecondary)
-                    Text("\(month.totalEUR) €")
+                    Text("\(month.totalEUR) \(ProfileStorage.shared.profile.currency.rawValue)")
                         .font(BeatDealTypography.headline)
                         .foregroundStyle(BeatDealColors.text)
                     Text("\(month.contractCount) contrat\(month.contractCount > 1 ? "s" : "")")

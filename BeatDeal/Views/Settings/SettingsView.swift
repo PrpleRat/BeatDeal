@@ -1,7 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject private var profileStorage = ProfileStorage.shared
+    @State private var exportURL: URL?
+    @State private var showShareExport = false
+    @State private var showImporter = false
+    @State private var alertMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -42,6 +47,14 @@ struct SettingsView: View {
                     Button("Activer les alertes de licence") {
                         Task { await LicenseAlertService.shared.requestAuthorizationIfNeeded() }
                     }
+
+                    Button("Exporter mes données (JSON)") {
+                        exportData()
+                    }
+
+                    Button("Importer une sauvegarde") {
+                        showImporter = true
+                    }
                 }
 
                 Section("À propos") {
@@ -55,6 +68,52 @@ struct SettingsView: View {
             .navigationTitle("Paramètres")
             .onDisappear {
                 profileStorage.save()
+            }
+            .sheet(isPresented: $showShareExport) {
+                if let exportURL {
+                    ShareSheet(items: [exportURL])
+                }
+            }
+            .fileImporter(
+                isPresented: $showImporter,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                importData(result)
+            }
+            .alert("BeatDeal", isPresented: Binding(
+                get: { alertMessage != nil },
+                set: { if !$0 { alertMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(alertMessage ?? "")
+            }
+        }
+    }
+
+    private func exportData() {
+        do {
+            exportURL = try BeatDealExportService.exportJSON()
+            showShareExport = true
+        } catch {
+            alertMessage = "Export impossible : \(error.localizedDescription)"
+        }
+    }
+
+    private func importData(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            alertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                try BeatDealExportService.importJSON(from: url)
+                alertMessage = "Sauvegarde importée avec succès."
+            } catch {
+                alertMessage = "Import impossible : \(error.localizedDescription)"
             }
         }
     }

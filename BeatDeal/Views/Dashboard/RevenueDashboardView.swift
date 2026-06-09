@@ -2,6 +2,9 @@ import SwiftUI
 
 struct RevenueDashboardView: View {
     @ObservedObject private var storage = ContractStorage.shared
+    @ObservedObject private var profileStorage = ProfileStorage.shared
+
+    private var currencySymbol: String { profileStorage.profile.currency.rawValue }
 
     private var dashboard: RevenueDashboard {
         RevenueStatsEngine.dashboard(from: storage.contracts)
@@ -30,7 +33,7 @@ struct RevenueDashboardView: View {
                 .textCase(.uppercase)
 
             HStack(alignment: .firstTextBaseline) {
-                Text("\(stats.totalEUR) €")
+                Text("\(stats.totalEUR) \(currencySymbol)")
                     .font(highlight ? BeatDealTypography.title : BeatDealTypography.headline)
                     .foregroundStyle(BeatDealColors.text)
                 Spacer()

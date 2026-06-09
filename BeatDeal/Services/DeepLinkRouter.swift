@@ -5,6 +5,7 @@ final class DeepLinkRouter: ObservableObject {
     static let shared = DeepLinkRouter()
 
     @Published private(set) var pendingSplitImport: SplitPadImport?
+    @Published var showImportChoice = false
 
     private init() {}
 

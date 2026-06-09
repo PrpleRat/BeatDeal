@@ -3,6 +3,11 @@ import WebKit
 
 struct NewContractView: View {
     var splitImport: SplitPadImport? = nil
+    var editingContract: Contract? = nil
+    var upgradeFromContract: Contract? = nil
+    var prefillBeat: CatalogBeat? = nil
+    var prefillPack: BeatPack? = nil
+    var prefillLicense: LicenseType? = nil
 
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileStorage = ProfileStorage.shared
@@ -36,7 +41,7 @@ struct NewContractView: View {
                 navigationBar
             }
             .background(BeatDealColors.background.ignoresSafeArea())
-            .navigationTitle("Nouveau contrat")
+            .navigationTitle(draft.contractId != nil ? "Modifier le contrat" : "Nouveau contrat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -64,10 +69,7 @@ struct NewContractView: View {
             } message: {
                 Text(alertMessage ?? "")
             }
-            .onAppear {
-                draft.applyProfile(profileStorage.profile)
-                applySplitImportIfNeeded()
-            }
+            .onAppear(perform: loadInitialDraft)
         }
     }
 
@@ -238,6 +240,17 @@ struct NewContractView: View {
 
             RightsToggleSection(rights: $draft.rights)
 
+            if let licenseType = draft.licenseType, !licenseType.isExclusive {
+                BeatDealTextField(
+                    title: "Limite de streams",
+                    text: Binding(
+                        get: { String(draft.maxStreams) },
+                        set: { draft.maxStreams = Int($0.filter(\.isNumber)) ?? draft.maxStreams }
+                    ),
+                    keyboard: .numberPad
+                )
+            }
+
             VStack(alignment: .leading, spacing: 4) {
                 Text("Clauses additionnelles")
                     .font(BeatDealTypography.caption)
@@ -313,6 +326,36 @@ struct NewContractView: View {
         } catch {
             alertMessage = "Erreur PDF : \(error.localizedDescription)"
         }
+    }
+
+    private func loadInitialDraft() {
+        if let editingContract {
+            draft.applyContract(editingContract)
+            return
+        }
+        if let upgradeFromContract, let upgrade = upgradeFromContract.suggestedUpgradeLicense {
+            draft.applyUpgrade(
+                from: upgradeFromContract,
+                to: upgrade,
+                template: templateStorage.template(for: upgrade),
+                catalog: catalogStorage
+            )
+            return
+        }
+        draft.applyProfile(profileStorage.profile)
+        if let license = prefillLicense {
+            draft.licenseType = license
+            draft.applyTemplate(templateStorage.template(for: license))
+        }
+        if let beat = prefillBeat {
+            draft.applyCatalogBeat(beat, licenseType: draft.licenseType)
+            draft.step = 2
+        } else if let pack = prefillPack {
+            let beats = catalogStorage.beats(for: pack)
+            draft.applyCatalogPack(pack, beats: beats, licenseType: draft.licenseType)
+            draft.step = 2
+        }
+        applySplitImportIfNeeded()
     }
 
     private func applySplitImportIfNeeded() {

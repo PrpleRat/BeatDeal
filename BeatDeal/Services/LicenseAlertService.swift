@@ -56,7 +56,22 @@ final class LicenseAlertService: ObservableObject {
             return
         }
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
+        let trigger: UNNotificationTrigger
+        if let expiresAt = contract.expiresAt {
+            let alertDate = Calendar.current.date(
+                byAdding: .day,
+                value: -AppConstants.licenseExpiryWarningDays,
+                to: expiresAt
+            ) ?? expiresAt
+            if alertDate > Date() {
+                let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: alertDate)
+                trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            } else {
+                trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+            }
+        } else {
+            trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        }
         let request = UNNotificationRequest(
             identifier: "beatdeal.license.\(contract.id)",
             content: content,

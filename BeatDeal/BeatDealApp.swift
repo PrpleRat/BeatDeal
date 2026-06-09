@@ -1,9 +1,14 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct BeatDealApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var deepLinkRouter = DeepLinkRouter.shared
+
+    init() {
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+    }
 
     var body: some Scene {
         WindowGroup {

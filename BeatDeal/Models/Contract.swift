@@ -55,6 +55,8 @@ struct Contract: Codable, Identifiable, Equatable {
 }
 
 struct ContractDraft: Equatable {
+    var contractId: String?
+    var contractCreatedAt: Date?
     var step: Int = 1
     var licenseType: LicenseType?
     var artistName: String = ""
@@ -80,6 +82,65 @@ struct ContractDraft: Equatable {
     var packBeatItems: [LicensedBeatItem]?
     var coProducer: CoProducer = CoProducer()
     var enableCoProducer: Bool = false
+
+    mutating func applyContract(_ contract: Contract) {
+        contractId = contract.id
+        contractCreatedAt = contract.createdAt
+        step = 1
+        licenseType = contract.licenseType
+        artistName = contract.artistName
+        artistEmail = contract.artistEmail
+        beatTitle = contract.beatTitle
+        bpm = contract.bpm.map(String.init) ?? ""
+        if let key = contract.musicalKey {
+            selectedKey = MusicalKey.allCases.first { $0.label == key }
+        }
+        if let mode = contract.keyMode {
+            selectedMode = KeyMode.allCases.first { $0.rawValue == mode }
+        }
+        producerName = contract.producerName
+        producerAlias = contract.producerAlias
+        producerEmail = contract.producerEmail
+        producerCountry = contract.producerCountry
+        price = String(contract.price)
+        currency = contract.currency
+        paymentMethod = contract.paymentMethod
+        paymentReference = contract.paymentReference
+        rights = contract.rights
+        maxStreams = contract.maxStreams
+        additionalClauses = contract.additionalClauses
+        catalogBeatId = contract.catalogBeatId
+        catalogPackId = contract.catalogPackId
+        packTitle = contract.packTitle
+        packBeatItems = contract.packBeatItems
+        if let coName = contract.coProducerName, !coName.isEmpty {
+            enableCoProducer = true
+            coProducer.name = coName
+            coProducer.alias = contract.coProducerAlias ?? ""
+            coProducer.sharePercent = contract.coProducerSharePercent ?? 50
+        }
+    }
+
+    mutating func applyUpgrade(from contract: Contract, to license: LicenseType, template: LicenseTemplate, catalog: BeatCatalogStorage) {
+        applyContract(contract)
+        contractId = nil
+        contractCreatedAt = nil
+        licenseType = license
+        applyTemplate(template)
+        if let beatId = contract.catalogBeatId, let beat = catalog.beat(id: beatId) {
+            applyCatalogBeat(beat, licenseType: license)
+        } else if let packId = contract.catalogPackId, let pack = catalog.pack(id: packId) {
+            let beats = catalog.beats(for: pack)
+            applyCatalogPack(pack, beats: beats, licenseType: license)
+        }
+        let upgradeNote = "Upgrade depuis \(contract.licenseType.title) (ref \(contract.reference))."
+        if additionalClauses.isEmpty {
+            additionalClauses = upgradeNote
+        } else if !additionalClauses.contains(contract.reference) {
+            additionalClauses += "\n\n\(upgradeNote)"
+        }
+        step = 2
+    }
 
     mutating func applyProfile(_ profile: ProducerProfile) {
         producerName = profile.producerName
@@ -132,13 +193,13 @@ struct ContractDraft: Equatable {
         }
     }
 
-    func buildContract(id: String = UUID().uuidString) -> Contract? {
+    func buildContract(id: String? = nil) -> Contract? {
         guard let licenseType else { return nil }
         guard let priceInt = Int(price.trimmingCharacters(in: .whitespaces)) else { return nil }
 
         return Contract(
-            id: id,
-            createdAt: Date(),
+            id: id ?? contractId ?? UUID().uuidString,
+            createdAt: contractCreatedAt ?? Date(),
             licenseType: licenseType,
             artistName: artistName.trimmingCharacters(in: .whitespaces),
             artistEmail: artistEmail.trimmingCharacters(in: .whitespaces),

@@ -35,6 +35,8 @@ struct NewSplitSheetView: View {
                     FormSectionHeader(title: "Morceau")
                     BeatDealTextField(title: "Titre", text: $draft.title, required: true)
                     BeatDealTextField(title: "Artiste principal", text: $draft.artist)
+                    BeatDealTextField(title: "ISRC", text: $draft.isrc)
+                    BeatDealTextField(title: "Montant convenu (€)", text: $draft.agreedPrice, keyboard: .numberPad)
 
                     SplitGenrePicker(genre: $draft.genre, subgenre: $draft.subgenre)
 
@@ -58,6 +60,18 @@ struct NewSplitSheetView: View {
                         Label("Ajouter un collaborateur", systemImage: "person.badge.plus")
                     }
                     .buttonStyle(SecondaryButtonStyle())
+
+                    FormSectionHeader(title: "Clauses")
+                    ForEach(Array(draft.clauses.enumerated()), id: \.offset) { index, _ in
+                        BeatDealTextField(
+                            title: "Clause \(index + 1)",
+                            text: Binding(
+                                get: { draft.clauses[index] },
+                                set: { draft.clauses[index] = $0 }
+                            )
+                        )
+                    }
+                    BeatDealTextField(title: "Notes", text: $draft.notes)
 
                     SplitTotalIndicator(label: "Master", total: totalMaster, target: 100)
                     if draft.splitType == .masterAndPublishing {

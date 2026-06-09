@@ -145,6 +145,8 @@ struct LicenseDetailView: View {
     @State private var streamsText = ""
     @State private var showContractKit = false
     @State private var showDeleteConfirm = false
+    @State private var showUpgradeContract = false
+    @State private var beatBillMissing = false
 
     var body: some View {
         NavigationStack {
@@ -175,9 +177,18 @@ struct LicenseDetailView: View {
                             Text("Propose un upgrade \(upgrade.title) à \(contract.artistName) pour « \(contract.beatTitle) ».")
                                 .font(BeatDealTypography.body)
                                 .foregroundStyle(BeatDealColors.text)
+                            Button("Créer contrat \(upgrade.title)") { showUpgradeContract = true }
+                                .buttonStyle(PrimaryButtonStyle())
                         }
                         .beatDealCard()
                     }
+
+                    Button("Facturer avec BeatBill") {
+                        if !BeatBillLink.openInvoice(from: contract) {
+                            beatBillMissing = true
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
 
                     Button("DM Kit, PDF & livraison") { showContractKit = true }
                         .buttonStyle(SecondaryButtonStyle())
@@ -218,6 +229,14 @@ struct LicenseDetailView: View {
             }
             .sheet(isPresented: $showContractKit) {
                 ContractDetailView(contract: contract)
+            }
+            .sheet(isPresented: $showUpgradeContract) {
+                NewContractView(upgradeFromContract: contract)
+            }
+            .alert("BeatBill introuvable", isPresented: $beatBillMissing) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Installe BeatBill pour facturer depuis cette licence.")
             }
         }
     }

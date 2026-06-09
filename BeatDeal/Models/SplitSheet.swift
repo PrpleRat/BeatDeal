@@ -109,6 +109,7 @@ struct SplitSheet: Codable, Identifiable, Equatable {
     var collaborators: [SplitCollaborator]
     var clauses: [String]
     var notes: String?
+    var agreedPrice: Int?
     var status: String
 
     var genreLabel: String? {
@@ -163,6 +164,7 @@ struct SplitSheetDraft: Equatable {
         "En cas de sample non clearé, ce split est suspendu",
     ]
     var notes: String = ""
+    var agreedPrice: String = ""
     var status: String = "pending"
 
     var isEditing: Bool { sheetId != nil }
@@ -203,6 +205,9 @@ struct SplitSheetDraft: Equatable {
         collaborators = sheet.collaborators
         clauses = sheet.clauses
         notes = sheet.notes ?? ""
+        if let price = sheet.agreedPrice {
+            agreedPrice = String(price)
+        }
         status = sheet.status
     }
 
@@ -223,6 +228,7 @@ struct SplitSheetDraft: Equatable {
             collaborators: valid,
             clauses: clauses,
             notes: notes.isEmpty ? nil : notes,
+            agreedPrice: Int(agreedPrice.trimmingCharacters(in: .whitespaces)),
             status: status
         )
     }

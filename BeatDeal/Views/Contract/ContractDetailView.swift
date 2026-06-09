@@ -8,6 +8,7 @@ struct ContractDetailView: View {
     @ObservedObject private var storage = ContractStorage.shared
     @State private var pdfURL: URL?
     @State private var loadError: String?
+    @State private var showEdit = false
 
     var body: some View {
         Group {
@@ -16,7 +17,7 @@ struct ContractDetailView: View {
                     contract: contract,
                     pdfURL: pdfURL,
                     allowEdit: false,
-                    onEdit: {},
+                    onEdit: { showEdit = true },
                     onSaved: { dismiss() },
                     onDelete: { storage.delete(contract) }
                 )
@@ -41,6 +42,9 @@ struct ContractDetailView: View {
             } catch {
                 loadError = "Impossible de charger le PDF."
             }
+        }
+        .sheet(isPresented: $showEdit) {
+            NewContractView(editingContract: contract)
         }
     }
 }

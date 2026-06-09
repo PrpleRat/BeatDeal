@@ -293,6 +293,13 @@ struct SplitCollaboratorEditor: View {
                 get: { collaborator.email ?? "" },
                 set: { collaborator.email = $0.isEmpty ? nil : $0 }
             ), keyboard: .emailAddress)
+
+            Toggle(isOn: $collaborator.signed) {
+                Text("A signé le split")
+                    .font(BeatDealTypography.body)
+                    .foregroundStyle(BeatDealColors.text)
+            }
+            .tint(BeatDealColors.accent)
         }
         .beatDealCard()
     }

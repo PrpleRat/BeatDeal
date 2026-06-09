@@ -7,6 +7,7 @@ struct CatalogView: View {
     @State private var editingPack: BeatPack?
     @State private var showNewBeat = false
     @State private var showNewPack = false
+    @State private var sellContext: SellFromCatalogContext?
 
     var body: some View {
         NavigationStack {
@@ -47,6 +48,9 @@ struct CatalogView: View {
             .sheet(isPresented: $showNewPack) {
                 BeatPackEditorView(pack: newPack(), beats: catalog.beats) { catalog.save($0) }
             }
+            .sheet(item: $sellContext) { context in
+                SellFromCatalogSheet(context: context)
+            }
         }
     }
 
@@ -59,6 +63,11 @@ struct CatalogView: View {
                 ForEach(catalog.beats) { beat in
                     Button { editingBeat = beat } label: { catalogRow(beat) }
                         .listRowBackground(BeatDealColors.card)
+                        .contextMenu {
+                            Button("Vendre ce beat", systemImage: "doc.badge.plus") {
+                                sellContext = SellFromCatalogContext(beat: beat, pack: nil)
+                            }
+                        }
                 }
                 .onDelete(perform: deleteBeats)
             }
@@ -75,6 +84,11 @@ struct CatalogView: View {
                 ForEach(catalog.packs) { pack in
                     Button { editingPack = pack } label: { packRow(pack) }
                         .listRowBackground(BeatDealColors.card)
+                        .contextMenu {
+                            Button("Vendre ce pack", systemImage: "doc.badge.plus") {
+                                sellContext = SellFromCatalogContext(beat: nil, pack: pack)
+                            }
+                        }
                 }
                 .onDelete(perform: deletePacks)
             }
