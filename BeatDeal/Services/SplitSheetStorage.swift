@@ -32,6 +32,11 @@ final class SplitSheetStorage: ObservableObject {
         persist()
     }
 
+    func delete(_ split: SplitSheet) {
+        splits.removeAll { $0.id == split.id }
+        persist()
+    }
+
     func recent(limit: Int = 5) -> [SplitSheet] {
         Array(splits.prefix(limit))
     }

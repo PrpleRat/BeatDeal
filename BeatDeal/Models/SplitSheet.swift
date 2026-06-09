@@ -14,33 +14,79 @@ enum SplitSheetType: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum SplitCollaboratorRole: String, Codable, CaseIterable, Identifiable {
-    case producteur = "Producteur"
-    case coproducteur = "Co-producteur"
-    case parolier = "Parolier"
-    case compositeur = "Compositeur"
-    case artiste = "Artiste"
-    case arrangeur = "Arrangeur"
-    case custom = "Custom"
-
-    var id: String { rawValue }
-}
-
 struct SplitCollaborator: Codable, Identifiable, Equatable {
     var id: String
     var name: String
-    var role: String
+    var roles: [String]
     var masterShare: Int
     var publishingShare: Int
     var sacem: String?
     var email: String?
     var signed: Bool
 
+    var roleLabel: String {
+        roles.isEmpty ? "—" : roles.joined(separator: " · ")
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, role, roles, masterShare, publishingShare, sacem, email, signed
+    }
+
+    init(
+        id: String,
+        name: String,
+        roles: [String],
+        masterShare: Int,
+        publishingShare: Int,
+        sacem: String?,
+        email: String?,
+        signed: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.roles = roles
+        self.masterShare = masterShare
+        self.publishingShare = publishingShare
+        self.sacem = sacem
+        self.email = email
+        self.signed = signed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        if let decodedRoles = try container.decodeIfPresent([String].self, forKey: .roles), !decodedRoles.isEmpty {
+            roles = decodedRoles
+        } else if let legacyRole = try container.decodeIfPresent(String.self, forKey: .role), !legacyRole.isEmpty {
+            roles = [legacyRole]
+        } else {
+            roles = [SplitConstants.defaultRole]
+        }
+        masterShare = try container.decode(Int.self, forKey: .masterShare)
+        publishingShare = try container.decode(Int.self, forKey: .publishingShare)
+        sacem = try container.decodeIfPresent(String.self, forKey: .sacem)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        signed = try container.decodeIfPresent(Bool.self, forKey: .signed) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(roles, forKey: .roles)
+        try container.encode(masterShare, forKey: .masterShare)
+        try container.encode(publishingShare, forKey: .publishingShare)
+        try container.encodeIfPresent(sacem, forKey: .sacem)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encode(signed, forKey: .signed)
+    }
+
     static func empty(id: String = UUID().uuidString) -> SplitCollaborator {
         SplitCollaborator(
             id: id,
             name: "",
-            role: SplitCollaboratorRole.producteur.rawValue,
+            roles: [SplitConstants.defaultRole],
             masterShare: 0,
             publishingShare: 0,
             sacem: nil,
@@ -56,6 +102,7 @@ struct SplitSheet: Codable, Identifiable, Equatable {
     var title: String
     var artist: String?
     var genre: String?
+    var subgenre: String?
     var isrc: String?
     var createdAt: Date
     var splitType: SplitSheetType
@@ -63,6 +110,17 @@ struct SplitSheet: Codable, Identifiable, Equatable {
     var clauses: [String]
     var notes: String?
     var status: String
+
+    var genreLabel: String? {
+        switch (genre, subgenre) {
+        case let (g?, s?) where !g.isEmpty && !s.isEmpty && s != "—":
+            return "\(g) · \(s)"
+        case let (g?, _) where !g.isEmpty:
+            return g
+        default:
+            return nil
+        }
+    }
 
     var totalMaster: Int {
         collaborators.reduce(0) { $0 + $1.masterShare }
@@ -90,9 +148,12 @@ struct SplitSheet: Codable, Identifiable, Equatable {
 }
 
 struct SplitSheetDraft: Equatable {
+    var sheetId: String?
+    var sheetRef: String?
     var title: String = ""
     var artist: String = ""
     var genre: String = ""
+    var subgenre: String = ""
     var isrc: String = ""
     var createdAt: Date = Date()
     var splitType: SplitSheetType = .masterAndPublishing
@@ -102,6 +163,9 @@ struct SplitSheetDraft: Equatable {
         "En cas de sample non clearé, ce split est suspendu",
     ]
     var notes: String = ""
+    var status: String = "pending"
+
+    var isEditing: Bool { sheetId != nil }
 
     mutating func applyProfile(_ profile: ProducerProfile) {
         guard let first = collaborators.indices.first else { return }
@@ -121,28 +185,45 @@ struct SplitSheetDraft: Equatable {
                 collaborators.append(SplitCollaborator.empty())
             }
             collaborators[1].name = coName
-            collaborators[1].role = SplitCollaboratorRole.coproducteur.rawValue
+            collaborators[1].roles = ["Co-producteur"]
             collaborators[1].masterShare = share
         }
     }
 
-    func buildSheet(id: String = UUID().uuidString) -> SplitSheet? {
+    mutating func applySheet(_ sheet: SplitSheet) {
+        sheetId = sheet.id
+        sheetRef = sheet.ref
+        title = sheet.title
+        artist = sheet.artist ?? ""
+        genre = sheet.genre ?? ""
+        subgenre = sheet.subgenre ?? ""
+        isrc = sheet.isrc ?? ""
+        createdAt = sheet.createdAt
+        splitType = sheet.splitType
+        collaborators = sheet.collaborators
+        clauses = sheet.clauses
+        notes = sheet.notes ?? ""
+        status = sheet.status
+    }
+
+    func buildSheet() -> SplitSheet? {
         let valid = collaborators.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
         guard !title.trimmingCharacters(in: .whitespaces).isEmpty, !valid.isEmpty else { return nil }
 
         return SplitSheet(
-            id: id,
-            ref: SplitSheet.generateRef(),
+            id: sheetId ?? UUID().uuidString,
+            ref: sheetRef ?? SplitSheet.generateRef(),
             title: title.trimmingCharacters(in: .whitespaces),
             artist: artist.isEmpty ? nil : artist,
             genre: genre.isEmpty ? nil : genre,
+            subgenre: subgenre.isEmpty || subgenre == "—" ? nil : subgenre,
             isrc: isrc.isEmpty ? nil : isrc,
             createdAt: createdAt,
             splitType: splitType,
             collaborators: valid,
             clauses: clauses,
             notes: notes.isEmpty ? nil : notes,
-            status: "pending"
+            status: status
         )
     }
 }

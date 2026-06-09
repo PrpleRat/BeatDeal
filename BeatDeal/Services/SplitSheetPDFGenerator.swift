@@ -42,7 +42,7 @@ enum SplitSheetHTMLBuilder {
             return """
             <tr>
               <td>\(escape(c.name))</td>
-              <td>\(escape(c.role))</td>
+              <td>\(escape(c.roleLabel))</td>
               <td style="text-align:center">\(c.masterShare)%</td>
               \(pub)
             </tr>
@@ -100,7 +100,7 @@ enum SplitSheetHTMLBuilder {
             <h2>Morceau</h2>
             <p><strong>MORCEAU :</strong> "\(escape(split.title))"</p>
             \(split.artist.map { "<p><strong>Artiste :</strong> \(escape($0))</p>" } ?? "")
-            \(split.genre.map { "<p><strong>Genre :</strong> \(escape($0))</p>" } ?? "")
+            \(split.genreLabel.map { "<p><strong>Genre :</strong> \(escape($0))</p>" } ?? "")
             <p><strong>Date :</strong> \(dateFormatter.string(from: split.createdAt))</p>
             <p><strong>ISRC :</strong> \(split.isrc?.isEmpty == false ? escape(split.isrc!) : "À obtenir")</p>
             <p><strong>Référence :</strong> \(escape(split.ref))</p>

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NewSplitSheetView: View {
     var splitImport: SplitPadImport? = nil
+    var editingSplit: SplitSheet? = nil
 
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var profileStorage = ProfileStorage.shared
@@ -11,6 +12,7 @@ struct NewSplitSheetView: View {
     @State private var previewSheet: SplitSheet?
     @State private var previewURL: URL?
     @State private var alertMessage: String?
+    @State private var didLoadDraft = false
 
     private var totalMaster: Int {
         draft.collaborators.reduce(0) { $0 + $1.masterShare }
@@ -34,35 +36,9 @@ struct NewSplitSheetView: View {
                     BeatDealTextField(title: "Titre", text: $draft.title, required: true)
                     BeatDealTextField(title: "Artiste principal", text: $draft.artist)
 
-                    Text("Genre")
-                        .font(BeatDealTypography.caption)
-                        .foregroundStyle(BeatDealColors.textSecondary)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(AppConstants.splitGenres, id: \.self) { g in
-                                Button(g) { draft.genre = draft.genre == g ? "" : g }
-                                    .font(BeatDealTypography.caption)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(draft.genre == g ? BeatDealColors.accent : BeatDealColors.card)
-                                    .foregroundStyle(BeatDealColors.text)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
+                    SplitGenrePicker(genre: $draft.genre, subgenre: $draft.subgenre)
 
-                    FormSectionHeader(title: "Type de split")
-                    HStack(spacing: BeatDealSpacing.sm) {
-                        ForEach(SplitSheetType.allCases) { type in
-                            Button(type.label) { draft.splitType = type }
-                                .font(BeatDealTypography.caption)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(draft.splitType == type ? BeatDealColors.accent : BeatDealColors.card)
-                                .foregroundStyle(BeatDealColors.text)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        }
-                    }
+                    splitTypeSection
 
                     FormSectionHeader(title: "Collaborateurs")
                     ForEach($draft.collaborators) { $collab in
@@ -88,7 +64,7 @@ struct NewSplitSheetView: View {
                         SplitTotalIndicator(label: "Publishing", total: totalPublishing, target: 100)
                     }
 
-                    Button("Générer le PDF") { generate() }
+                    Button(draft.isEditing ? "Mettre à jour le PDF" : "Générer le PDF") { generate() }
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(!canGenerate)
                         .opacity(canGenerate ? 1 : 0.5)
@@ -96,24 +72,20 @@ struct NewSplitSheetView: View {
                 .padding(BeatDealSpacing.md)
             }
             .background(BeatDealColors.background.ignoresSafeArea())
-            .navigationTitle("Split en 90s")
+            .navigationTitle(draft.isEditing ? "Modifier le split" : "Split en 90s")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Fermer") { dismiss() }
                 }
             }
-            .onAppear {
-                draft.applyProfile(profileStorage.profile)
-                if let splitImport {
-                    draft.applyImport(splitImport)
-                }
-            }
+            .onAppear(perform: loadDraftIfNeeded)
             .sheet(item: $previewSheet) { sheet in
                 SplitSheetPreviewView(
                     split: sheet,
                     pdfURL: previewURL,
-                    onDismiss: { dismiss() }
+                    onDismiss: { dismiss() },
+                    onEdit: { previewSheet = nil }
                 )
             }
             .alert("BeatDeal", isPresented: Binding(
@@ -123,6 +95,43 @@ struct NewSplitSheetView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(alertMessage ?? "")
+            }
+        }
+    }
+
+    private var splitTypeSection: some View {
+        VStack(alignment: .leading, spacing: BeatDealSpacing.sm) {
+            HStack(spacing: BeatDealSpacing.xs) {
+                FormSectionHeader(title: "Type de split")
+                BeatDealInfoTip(
+                    title: SplitConstants.Help.splitType.title,
+                    text: SplitConstants.Help.splitType.text
+                )
+            }
+
+            HStack(spacing: BeatDealSpacing.sm) {
+                ForEach(SplitSheetType.allCases) { type in
+                    Button(type.label) { draft.splitType = type }
+                        .font(BeatDealTypography.caption)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(draft.splitType == type ? BeatDealColors.accent : BeatDealColors.card)
+                        .foregroundStyle(BeatDealColors.text)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+        }
+    }
+
+    private func loadDraftIfNeeded() {
+        guard !didLoadDraft else { return }
+        didLoadDraft = true
+        if let editingSplit {
+            draft.applySheet(editingSplit)
+        } else {
+            draft.applyProfile(profileStorage.profile)
+            if let splitImport {
+                draft.applyImport(splitImport)
             }
         }
     }

@@ -5,6 +5,7 @@ struct SplitSheetPreviewView: View {
     let split: SplitSheet
     let pdfURL: URL?
     let onDismiss: () -> Void
+    var onEdit: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var showShare = false
@@ -20,6 +21,14 @@ struct SplitSheetPreviewView: View {
                 VStack(spacing: BeatDealSpacing.sm) {
                     Button("Partager le PDF") { showShare = true }
                         .buttonStyle(PrimaryButtonStyle())
+
+                    if onEdit != nil {
+                        Button("Modifier le split") {
+                            dismiss()
+                            onEdit?()
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                    }
 
                     Button("Créer un contrat de licence") {
                         splitImport = SplitPadImport(

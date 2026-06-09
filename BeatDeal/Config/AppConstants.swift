@@ -14,8 +14,6 @@ enum AppConstants {
     static let storageKeyPacks = "beatdeal.packs"
     static let storageKeySplits = "beatdeal.splits"
 
-    static let splitGenres = ["Rap FR", "Trap", "Drill", "Afro", "R&B", "Pop", "Autre"]
-
     static let streamAlertThreshold = 0.8
     static let licenseExpiryWarningDays = 14
     static let defaultLeaseDurationMonths = 12

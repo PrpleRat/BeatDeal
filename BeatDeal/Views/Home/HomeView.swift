@@ -8,6 +8,8 @@ struct HomeView: View {
     @State private var shareURL: URL?
     @State private var showShare = false
     @State private var showNewSplit = false
+    @State private var editingSplit: SplitSheet?
+    @State private var splitPendingDelete: SplitSheet?
     @State private var selectedContract: Contract?
     @State private var contractPendingDelete: Contract?
     @State private var alertMessage: String?
@@ -50,6 +52,9 @@ struct HomeView: View {
             .sheet(isPresented: $showNewSplit) {
                 NewSplitSheetView()
             }
+            .sheet(item: $editingSplit) { split in
+                NewSplitSheetView(editingSplit: split)
+            }
             .sheet(item: $selectedContract) { contract in
                 ContractDetailView(contract: contract)
             }
@@ -86,6 +91,31 @@ struct HomeView: View {
                     Text("« \(contract.displayBeatTitle) » sera définitivement supprimé.")
                 }
             }
+            .confirmationDialog(
+                "Supprimer ce split ?",
+                isPresented: Binding(
+                    get: { splitPendingDelete != nil },
+                    set: { if !$0 { splitPendingDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Supprimer", role: .destructive) {
+                    if let split = splitPendingDelete {
+                        splitStorage.delete(split)
+                        if editingSplit?.id == split.id {
+                            editingSplit = nil
+                        }
+                        splitPendingDelete = nil
+                    }
+                }
+                Button("Annuler", role: .cancel) {
+                    splitPendingDelete = nil
+                }
+            } message: {
+                if let split = splitPendingDelete {
+                    Text("« \(split.title) » sera définitivement supprimé.")
+                }
+            }
         }
     }
 
@@ -98,18 +128,36 @@ struct HomeView: View {
                 .foregroundStyle(BeatDealColors.text)
             VStack(spacing: BeatDealSpacing.sm) {
                 ForEach(recent) { split in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(split.title)
-                                .font(BeatDealTypography.body)
-                                .foregroundStyle(BeatDealColors.text)
-                            Text("\(split.ref) · \(split.collaborators.count) collab.")
-                                .font(BeatDealTypography.caption)
+                    Button {
+                        editingSplit = split
+                    } label: {
+                        HStack(spacing: BeatDealSpacing.md) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(split.title)
+                                    .font(BeatDealTypography.body)
+                                    .foregroundStyle(BeatDealColors.text)
+                                Text("\(split.ref) · \(split.collaborators.count) collab.")
+                                    .font(BeatDealTypography.caption)
+                                    .foregroundStyle(BeatDealColors.textSecondary)
+                                if let genre = split.genreLabel {
+                                    Text(genre)
+                                        .font(BeatDealTypography.caption)
+                                        .foregroundStyle(BeatDealColors.textSecondary)
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
                                 .foregroundStyle(BeatDealColors.textSecondary)
                         }
-                        Spacer()
+                        .beatDealCard()
                     }
-                    .beatDealCard()
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Supprimer", systemImage: "trash", role: .destructive) {
+                            splitPendingDelete = split
+                        }
+                    }
                 }
             }
         }
